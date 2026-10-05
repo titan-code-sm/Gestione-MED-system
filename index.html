@@ -166,8 +166,8 @@ const portale=app.functions('europe-west1').httpsCallable('portaleUtenti');
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 let utenti=[], _uidPass=null;
-// Modelli disponibili per il sito demo (devono esistere anche nell'app: GS_MODELLI_DEMO).
-const MODELLI_DEMO=[{id:'gineco', nome:'Ginecologia e Ostetricia'}];
+// Modelli disponibili per il sito demo (devono esistere anche nell'app: GS_MODELLI).
+const MODELLI_DEMO=[{id:'gineco', nome:'Ginecologia e Ostetricia'},{id:'base', nome:'Base (tutte le specialità)'}];
 async function caricaModelloDemo(){
   const sel=$('demo-modello');
   sel.innerHTML=MODELLI_DEMO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
