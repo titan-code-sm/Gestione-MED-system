@@ -97,6 +97,17 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
   </header>
 
   <div class="card">
+    <h2>Sito dimostrativo</h2>
+    <div class="sub">Il sito pubblico di MED System si apre senza account, con pazienti di esempio. Scegli quale modello mostra.</div>
+    <div class="riga" style="align-items:center;max-width:520px">
+      <select id="demo-modello"></select>
+      <button class="btn btn-primary" onclick="salvaModelloDemo()">Salva</button>
+      <a class="btn btn-ghost" href="https://titan-code-sm.github.io/GynoSistem/" target="_blank" rel="noopener">Apri il sito ↗</a>
+    </div>
+    <div class="msg" id="demo-msg"></div>
+  </div>
+
+  <div class="card">
     <h2>Nuovo account</h2>
     <div class="sub">La persona entrerà con questa email e la password provvisoria; al primo accesso dovrà sceglierne una sua.</div>
     <div class="grid">
@@ -155,6 +166,17 @@ const portale=app.functions('europe-west1').httpsCallable('portaleUtenti');
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 let utenti=[], _uidPass=null;
+// Modelli disponibili per il sito demo (devono esistere anche nell'app: GS_MODELLI_DEMO).
+const MODELLI_DEMO=[{id:'gineco', nome:'Ginecologia e Ostetricia'}];
+async function caricaModelloDemo(){
+  const sel=$('demo-modello');
+  sel.innerHTML=MODELLI_DEMO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
+  try{ sel.value=(await portale({azione:'leggiModelloDemo'})).data.modello||'gineco'; }catch(e){}
+}
+async function salvaModelloDemo(){
+  try{ await portale({azione:'modelloDemo', modello:$('demo-modello').value}); msg($('demo-msg'),'✅ Modello del sito aggiornato.',true); }
+  catch(e){ msg($('demo-msg'),errore(e)); }
+}
 const $=id=>document.getElementById(id);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(el,testo,ok){ el.textContent=testo; el.className='msg '+(ok?'ok':'err'); }
@@ -183,7 +205,7 @@ auth.onAuthStateChanged(async user=>{
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
   $('l-pass').value='';
-  if(user){ $('io').textContent=user.email; caricaUtenti(); }
+  if(user){ $('io').textContent=user.email; caricaUtenti(); caricaModelloDemo(); }
 });
 
 async function caricaUtenti(){
