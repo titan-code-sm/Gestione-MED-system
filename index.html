@@ -66,6 +66,23 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
 .modal p{color:var(--label4);font-size:.85rem;margin-bottom:14px;line-height:1.5}
 .riga{display:flex;gap:8px}
 .vuoto{text-align:center;color:var(--label4);padding:30px 0}
+.listino td,.listino th{padding:8px 10px}
+.listino td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+details.card summary{cursor:pointer;list-style:none}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:400}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi div{background:var(--surface2);border:1px solid var(--separator);border-radius:10px;padding:12px 14px}
+.kpi b{display:block;font-size:1.25rem;font-weight:700}
+.kpi span{color:var(--label4);font-size:.76rem}
+.lic{font-size:.8rem;line-height:1.5}
+.lic .scad-ko{color:var(--red);font-weight:600}.lic .scad-warn{color:var(--orange);font-weight:600}
+.modal.largo{width:min(640px,94vw);max-height:92vh;overflow-y:auto}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sezione{border-top:1px solid var(--separator);margin-top:14px;padding-top:14px}
+.pag{display:flex;gap:10px;align-items:center;font-size:.82rem;padding:6px 0;border-bottom:1px solid var(--separator)}
+.pag:last-child{border-bottom:none}
+@media(max-width:800px){.kpi{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 @media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.nascondi-mobile{display:none}}
 </style>
 </head>
@@ -107,6 +124,28 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
     <div class="msg" id="demo-msg"></div>
   </div>
 
+  <details class="card">
+    <summary><h2>Listino e piani</h2><div class="sub" style="margin:0">Prezzi indicativi IVA esclusa: sono quelli proposti in automatico quando assegni un piano (sempre modificabili).</div></summary>
+    <div style="overflow-x:auto;margin-top:14px">
+      <table class="listino">
+        <thead><tr><th>Piano</th><th class="num">Base</th><th class="num">Specialistico (Gineco, Proct)</th><th>Durata / note</th></tr></thead>
+        <tbody id="listino-piani"></tbody>
+      </table>
+    </div>
+    <div class="g2" style="margin-top:16px">
+      <div><div style="font-weight:600;margin-bottom:6px">Sconti</div><div class="lic" id="listino-sconti"></div></div>
+      <div><div style="font-weight:600;margin-bottom:6px">Servizi extra</div><div class="lic">
+        Installazione e configurazione a distanza: 50 €<br>Formazione (1 ora): 50 €<br>Personalizzazioni: 40-50 €/ora<br>Recupero dati da altri programmi: a preventivo</div></div>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2>Scadenze e incassi</h2>
+    <div class="sub">Abbonamenti e prove scaduti o in scadenza nei prossimi 30 giorni. Alla scadenza l'app blocca l'accesso da sola (i dati restano sul PC); per riattivarla registra il pagamento.</div>
+    <div class="kpi" id="kpi"></div>
+    <div id="scadenze"></div>
+  </div>
+
   <div class="card">
     <h2>Nuovo account</h2>
     <div class="sub">La persona entrerà con questa email e la password provvisoria; al primo accesso dovrà sceglierne una sua.</div>
@@ -117,6 +156,12 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
         <select id="n-genere"><option value="f">Al femminile</option><option value="m">Al maschile</option><option value="n" selected>Neutro</option></select></div>
       <div><label for="n-pass">Password provvisoria</label>
         <div class="riga"><input id="n-pass" autocomplete="off"><button class="btn btn-ghost btn-sm" type="button" onclick="document.getElementById('n-pass').value=generaPassword()" title="Genera">🎲</button></div></div>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><label for="n-modello">Versione dell'app</label><select id="n-modello"></select></div>
+      <div><label for="n-piano">Piano</label><select id="n-piano"></select></div>
+      <div><label for="n-sconto">Sconto</label><select id="n-sconto"></select></div>
+      <div><label for="n-scadenza">Scadenza</label><input id="n-scadenza" type="date"></div>
     </div>
     <div style="margin-top:14px"><button class="btn btn-primary" id="n-btn" onclick="creaAccount()">Crea account</button></div>
     <div class="msg" id="n-msg"></div>
@@ -129,8 +174,8 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
     </div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>Utente</th><th>Stato</th><th class="nascondi-mobile">Ultimo accesso</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
-        <tbody id="lista"><tr><td colspan="6" class="vuoto">Caricamento…</td></tr></tbody>
+        <thead><tr><th>Utente</th><th>Stato</th><th>Licenza</th><th class="nascondi-mobile">Ultimo accesso</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
+        <tbody id="lista"><tr><td colspan="7" class="vuoto">Caricamento…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -151,6 +196,48 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
   </div>
 </div>
 
+<!-- LICENZA E PAGAMENTI -->
+<div class="overlay" id="m-lic">
+  <div class="modal largo">
+    <h3 id="m-lic-titolo">Licenza</h3>
+    <p>Versione dell'app, piano e scadenza. L'app controlla questi dati a ogni accesso.</p>
+    <div class="g2">
+      <div><label for="lic-modello">Versione dell'app</label><select id="lic-modello" onchange="ricalcolaPrezzo('lic')"></select></div>
+      <div><label for="lic-piano">Piano</label><select id="lic-piano" onchange="cambiaPiano('lic')"></select></div>
+      <div><label for="lic-sconto">Sconto</label><select id="lic-sconto" onchange="ricalcolaPrezzo('lic')"></select></div>
+      <div><label for="lic-prezzo">Prezzo concordato (€)</label><input id="lic-prezzo" type="number" min="0" step="0.01"></div>
+      <div><label for="lic-scadenza" id="lic-scadenza-label">Scadenza</label><input id="lic-scadenza" type="date"></div>
+      <div><label>&nbsp;</label><div class="riga">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="allunga(1)">+1 mese</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="allunga(12)">+1 anno</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="$('lic-scadenza').value=''">Nessuna</button></div></div>
+    </div>
+    <label for="lic-note">Note</label><input id="lic-note" placeholder="es. amico di Cristina, rinnovo a voce">
+    <div class="sezione">
+      <label style="display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--label)"><input type="checkbox" id="pag-registra" style="width:auto" onchange="mostraPagamento()"> Registra un pagamento ricevuto</label>
+      <div id="pag-campi" style="display:none;margin-top:10px">
+        <div class="g2">
+          <div><label for="pag-data">Data</label><input id="pag-data" type="date"></div>
+          <div><label for="pag-importo">Importo (€)</label><input id="pag-importo" type="number" min="0" step="0.01"></div>
+          <div><label for="pag-metodo">Metodo</label><select id="pag-metodo"><option value="contanti">Contanti</option><option value="bonifico">Bonifico</option><option value="altro">Altro</option></select></div>
+          <div><label for="pag-fattura">Fattura / ricevuta n.</label><input id="pag-fattura" placeholder="es. 12/2026"></div>
+        </div>
+        <label for="pag-nota">Nota</label><input id="pag-nota" placeholder="facoltativa">
+        <div class="sub" style="margin:8px 0 0">Per abbonamenti mensili e annuali la scadenza si allunga in automatico di un periodo.</div>
+      </div>
+    </div>
+    <div class="sezione">
+      <div style="font-weight:600;margin-bottom:6px">Pagamenti registrati</div>
+      <div id="lic-pagamenti"></div>
+    </div>
+    <div class="msg" id="m-lic-msg"></div>
+    <div class="riga" style="justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-ghost" onclick="chiudiLicenza()">Chiudi</button>
+      <button class="btn btn-primary" id="m-lic-btn" onclick="salvaLicenza()">Salva</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const ADMIN_EMAIL='titancodesm@gmail.com';
 const app=firebase.initializeApp({
@@ -167,7 +254,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 let utenti=[], _uidPass=null;
 // Modelli disponibili per il sito demo (devono esistere anche nell'app: GS_MODELLI).
-const MODELLI_DEMO=[{id:'gineco', nome:'Ginecologia e Ostetricia'},{id:'base', nome:'Base (tutte le specialità)'}];
+const MODELLI_DEMO=[{id:'gineco', nome:'Ginecologia e Ostetricia'},{id:'proct', nome:'Proctologia'},{id:'base', nome:'Base (tutte le specialità)'}];
 async function caricaModelloDemo(){
   const sel=$('demo-modello');
   sel.innerHTML=MODELLI_DEMO.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
@@ -178,6 +265,150 @@ async function salvaModelloDemo(){
   catch(e){ msg($('demo-msg'),errore(e)); }
 }
 const $=id=>document.getElementById(id);
+
+// ── LICENZE ──
+// Versioni dell'app: "spec" = specialistica (listino più alto).
+const VERSIONI={gineco:{nome:'MED System Gineco', spec:true}, proct:{nome:'MED System Proct', spec:true}, base:{nome:'MED System (Base)', spec:false}};
+const PIANI={
+  prova:{nome:'Prova gratuita', base:0, spec:0, giorni:30, durata:'30 giorni, poi si blocca'},
+  gratis:{nome:'Gratis (omaggio)', base:0, spec:0, durata:'Senza scadenza'},
+  mensile:{nome:'Abbonamento mensile', base:19, spec:29, mesi:1, durata:'Si rinnova ogni mese'},
+  annuale:{nome:'Abbonamento annuale', base:190, spec:290, mesi:12, durata:'Si rinnova ogni anno (2 mesi gratis)'},
+  vita:{nome:'Licenza a vita', base:390, spec:590, mesi:12, durata:'Non scade; aggiornamenti per 1 anno, poi 99 € (Base) / 149 € (Specialistico) all\'anno'}
+};
+const SCONTI={'':{nome:'Nessuno', perc:0}, conoscente:{nome:'Conoscente (−20%)', perc:20}, amico:{nome:'Amico (−40%)', perc:40}, personalizzato:{nome:'Personalizzato', perc:null}};
+const PIANI_CON_SCADENZA=['prova','mensile','annuale'];
+const euro=n=>(n==null||isNaN(n))?'—':Number(n).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
+const oggiISO=()=>new Date().toISOString().slice(0,10);
+function aggiungiMesi(iso, mesi){ const d=new Date((iso||oggiISO())+'T12:00:00'); const g=d.getDate(); d.setMonth(d.getMonth()+mesi); if(d.getDate()<g) d.setDate(0); return d.toISOString().slice(0,10); }
+function aggiungiGiorni(iso, n){ const d=new Date((iso||oggiISO())+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function dataIt(iso){ return iso ? new Date(iso+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'}) : '—'; }
+function giorniA(iso){ return Math.round((new Date(iso+'T12:00:00')-new Date(oggiISO()+'T12:00:00'))/86400000); }
+function prezzoListino(piano, modello, sconto){
+  const p=PIANI[piano]; if(!p) return 0;
+  const base=(VERSIONI[modello]||{}).spec ? p.spec : p.base;
+  const perc=(SCONTI[sconto]||{}).perc||0;
+  return Math.round(base*(100-perc))/100;
+}
+function scadenzaIniziale(piano){
+  const p=PIANI[piano]||{};
+  return p.giorni ? aggiungiGiorni(oggiISO(), p.giorni) : (p.mesi ? aggiungiMesi(oggiISO(), p.mesi) : '');
+}
+function riempiSelect(id, mappa, val){ $(id).innerHTML=Object.entries(mappa).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join(''); if(val!==undefined) $(id).value=val; }
+function initLicenze(){
+  $('listino-piani').innerHTML=Object.values(PIANI).map(p=>`<tr><td><b>${esc(p.nome)}</b></td><td class="num">${p.base?euro(p.base):'gratis'}</td><td class="num">${p.spec?euro(p.spec):'gratis'}</td><td style="color:var(--label3);font-size:.82rem">${esc(p.durata)}</td></tr>`).join('');
+  $('listino-sconti').innerHTML=Object.values(SCONTI).filter(x=>x.perc).map(x=>esc(x.nome)).join('<br>')+'<br>Amico stretto: licenza gratis + 3-6 mesi di assistenza (piano "Gratis", sconto "Personalizzato")';
+  riempiSelect('n-modello', VERSIONI, 'gineco'); riempiSelect('n-piano', PIANI, 'prova'); riempiSelect('n-sconto', SCONTI, '');
+  $('n-scadenza').value=scadenzaIniziale('prova');
+  $('n-piano').onchange=()=>{ $('n-scadenza').value=scadenzaIniziale($('n-piano').value); };
+  riempiSelect('lic-modello', VERSIONI); riempiSelect('lic-piano', PIANI); riempiSelect('lic-sconto', SCONTI);
+}
+function statoScadenza(u){
+  if(!PIANI_CON_SCADENZA.includes(u.piano) || !u.scadenza) return null;
+  const g=giorniA(u.scadenza);
+  return g<0 ? {cls:'scad-ko', testo:`scaduto il ${dataIt(u.scadenza)}`, g} : {cls:g<=30?'scad-warn':'', testo:`scade il ${dataIt(u.scadenza)}${g<=30?` (tra ${g} g)`:''}`, g};
+}
+function cellaLicenza(u){
+  if(u.amministratore) return '<span style="color:var(--label4)">—</span>';
+  if(!u.piano) return '<span class="badge b-info">Nessun piano</span><div style="color:var(--label4)">accesso libero</div>';
+  const st=statoScadenza(u);
+  const righe=[`<span class="badge ${u.piano==='prova'?'b-warn':(u.piano==='gratis'?'b-info':'b-ok')}">${esc((PIANI[u.piano]||{}).nome||u.piano)}</span>`];
+  righe.push(`<div>${esc((VERSIONI[u.modello]||{}).nome||'Versione non indicata')}</div>`);
+  if(st) righe.push(`<div class="${st.cls}">${st.testo}</div>`);
+  else if(u.piano==='vita' && u.scadenza) righe.push(`<div style="color:var(--label4)">aggiornamenti fino al ${dataIt(u.scadenza)}</div>`);
+  if(u.prezzo) righe.push(`<div style="color:var(--label4)">${euro(u.prezzo)}${u.sconto?' · '+esc((SCONTI[u.sconto]||{}).nome||''):''}</div>`);
+  return righe.join('');
+}
+function disegnaScadenze(){
+  const clienti=utenti.filter(u=>!u.amministratore);
+  const anno=String(new Date().getFullYear());
+  const pagamenti=clienti.flatMap(u=>(u.pagamenti||[]));
+  const incassoAnno=pagamenti.filter(p=>(p.data||'').startsWith(anno)).reduce((t,p)=>t+(p.importo||0),0);
+  const contanti=pagamenti.filter(p=>(p.data||'').startsWith(anno) && p.metodo==='contanti').reduce((t,p)=>t+(p.importo||0),0);
+  const paganti=clienti.filter(u=>['mensile','annuale','vita'].includes(u.piano) && !u.bloccato).length;
+  const prove=clienti.filter(u=>u.piano==='prova' && !u.bloccato).length;
+  $('kpi').innerHTML=`<div><b>${paganti}</b><span>clienti paganti attivi</span></div><div><b>${prove}</b><span>prove in corso</span></div><div><b>${euro(incassoAnno)}</b><span>incassato nel ${anno}</span></div><div><b>${euro(contanti)}</b><span>di cui in contanti</span></div>`;
+  const lista=clienti.map(u=>({u, st:statoScadenza(u)})).filter(x=>x.st && x.st.g<=30).sort((a,b)=>a.st.g-b.st.g);
+  $('scadenze').innerHTML=lista.length ? '<table><tbody>'+lista.map(({u,st})=>`<tr><td><div class="nome">${esc(u.nome||u.email)}</div><div class="email">${esc(u.email)}</div></td><td class="lic">${esc((PIANI[u.piano]||{}).nome||'')} · ${esc((VERSIONI[u.modello]||{}).nome||'')}</td><td class="lic ${st.cls}">${st.testo}</td><td><div class="azioni"><button class="btn btn-primary btn-sm" onclick="apriLicenza('${esc(u.uid)}',true)">Registra pagamento</button></div></td></tr>`).join('')+'</tbody></table>'
+    : '<div class="vuoto" style="padding:14px 0">✅ Nessuna scadenza nei prossimi 30 giorni.</div>';
+}
+
+let _uidLic=null;
+function apriLicenza(uid, conPagamento){
+  const u=utenti.find(x=>x.uid===uid); if(!u) return;
+  _uidLic=uid;
+  $('m-lic-titolo').textContent='Licenza — '+(u.nome||u.email);
+  $('lic-modello').value=u.modello||'gineco';
+  $('lic-piano').value=u.piano||'prova';
+  $('lic-sconto').value=u.sconto||'';
+  $('lic-prezzo').value=u.prezzo!=null ? u.prezzo : prezzoListino($('lic-piano').value, $('lic-modello').value, $('lic-sconto').value);
+  $('lic-scadenza').value=u.piano ? (u.scadenza||'') : scadenzaIniziale($('lic-piano').value);
+  $('lic-note').value=u.noteLicenza||'';
+  aggiornaEtichettaScadenza();
+  $('pag-registra').checked=!!conPagamento; mostraPagamento();
+  disegnaPagamenti(u);
+  $('m-lic-msg').textContent='';
+  $('m-lic').classList.add('show');
+}
+function chiudiLicenza(){ $('m-lic').classList.remove('show'); _uidLic=null; }
+function aggiornaEtichettaScadenza(){ $('lic-scadenza-label').textContent=$('lic-piano').value==='vita'?'Aggiornamenti inclusi fino al':'Scadenza'; }
+function ricalcolaPrezzo(){
+  if($('lic-sconto').value!=='personalizzato') $('lic-prezzo').value=prezzoListino($('lic-piano').value, $('lic-modello').value, $('lic-sconto').value);
+  if($('pag-registra').checked) $('pag-importo').value=$('lic-prezzo').value;
+}
+function cambiaPiano(){ $('lic-scadenza').value=scadenzaIniziale($('lic-piano').value); aggiornaEtichettaScadenza(); ricalcolaPrezzo(); }
+function allunga(mesi){
+  const att=$('lic-scadenza').value, base=(att && att>oggiISO())?att:oggiISO();
+  $('lic-scadenza').value=aggiungiMesi(base, mesi);
+}
+function mostraPagamento(){
+  const si=$('pag-registra').checked;
+  $('pag-campi').style.display=si?'':'none';
+  if(si){ $('pag-data').value=oggiISO(); $('pag-importo').value=$('lic-prezzo').value; $('pag-metodo').value='contanti'; $('pag-fattura').value=''; $('pag-nota').value=''; }
+}
+function disegnaPagamenti(u){
+  const lista=[...(u.pagamenti||[])].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  $('lic-pagamenti').innerHTML=lista.length ? lista.map(p=>`<div class="pag"><b style="min-width:90px">${dataIt(p.data)}</b><span style="min-width:80px">${euro(p.importo)}</span><span class="badge ${p.metodo==='contanti'?'b-warn':'b-info'}">${esc(p.metodo)}</span><span style="flex:1;color:var(--label3)">${p.fattura?'Fatt. '+esc(p.fattura)+' · ':''}${esc((PIANI[p.piano]||{}).nome||'')}${p.nota?' · '+esc(p.nota):''}</span><button class="btn btn-ghost btn-sm" title="Elimina questa registrazione" onclick="eliminaPagamento('${esc(p.id)}')">✕</button></div>`).join('')
+    : '<div style="color:var(--label4);font-size:.82rem">Nessun pagamento registrato.</div>';
+}
+async function salvaLicenza(){
+  const m=$('m-lic-msg'), btn=$('m-lic-btn');
+  const piano=$('lic-piano').value;
+  let scadenza=$('lic-scadenza').value;
+  const dati={azione:'licenza', uid:_uidLic, modello:$('lic-modello').value, piano, sconto:$('lic-sconto').value,
+    prezzo:Number($('lic-prezzo').value)||0, noteLicenza:$('lic-note').value.trim()};
+  if($('pag-registra').checked){
+    const importo=Number($('pag-importo').value);
+    if(!$('pag-data').value || isNaN(importo)){ msg(m,'Indica data e importo del pagamento.'); return; }
+    dati.pagamento={data:$('pag-data').value, importo, metodo:$('pag-metodo').value, fattura:$('pag-fattura').value.trim(), nota:$('pag-nota').value.trim()};
+    // Rinnovo: l'abbonamento riparte dalla scadenza attuale (o da oggi se già scaduto)
+    const u=utenti.find(x=>x.uid===_uidLic)||{};
+    const mesi=(PIANI[piano]||{}).mesi;
+    if((piano==='mensile'||piano==='annuale') && mesi && u.piano===piano && scadenza===(u.scadenza||'')){
+      scadenza=aggiungiMesi(scadenza && scadenza>oggiISO() ? scadenza : oggiISO(), mesi);
+    }
+  }
+  if(PIANI_CON_SCADENZA.includes(piano) && !scadenza){ msg(m,'Per questo piano serve una data di scadenza.'); return; }
+  dati.scadenza=scadenza;
+  btn.disabled=true;
+  try{
+    await portale(dati);
+    await caricaUtenti();
+    const u=utenti.find(x=>x.uid===_uidLic);
+    if(u){ $('lic-scadenza').value=u.scadenza||''; disegnaPagamenti(u); }
+    $('pag-registra').checked=false; mostraPagamento();
+    msg(m,'✅ Licenza salvata'+(dati.pagamento?' e pagamento registrato':'')+(scadenza?' · scadenza '+dataIt(scadenza):'')+'.',true);
+  }catch(e){ msg(m,errore(e)); }
+  btn.disabled=false;
+}
+async function eliminaPagamento(idPagamento){
+  if(!confirm('Eliminare questa registrazione di pagamento?')) return;
+  try{
+    await portale({azione:'eliminaPagamento', uid:_uidLic, idPagamento});
+    await caricaUtenti();
+    const u=utenti.find(x=>x.uid===_uidLic); if(u) disegnaPagamenti(u);
+  }catch(e){ alert(errore(e)); }
+}
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function msg(el,testo,ok){ el.textContent=testo; el.className='msg '+(ok?'ok':'err'); }
 function errore(e){ return (e && e.message) ? e.message.replace(/^.*?:\s*/,'') : 'Operazione non riuscita.'; }
@@ -205,17 +436,18 @@ auth.onAuthStateChanged(async user=>{
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
   $('l-pass').value='';
-  if(user){ $('io').textContent=user.email; caricaUtenti(); caricaModelloDemo(); }
+  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); }
 });
 
 async function caricaUtenti(){
-  $('lista').innerHTML='<tr><td colspan="6" class="vuoto">Caricamento…</td></tr>';
+  $('lista').innerHTML='<tr><td colspan="7" class="vuoto">Caricamento…</td></tr>';
   try{
     utenti=(await portale({azione:'elenco'})).data.utenti
       .sort((a,b)=>(b.amministratore-a.amministratore)||a.nome.localeCompare(b.nome));
     disegna();
+    disegnaScadenze();
   }catch(e){
-    $('lista').innerHTML=`<tr><td colspan="6" class="vuoto">⚠️ ${esc(errore(e))}</td></tr>`;
+    $('lista').innerHTML=`<tr><td colspan="7" class="vuoto">⚠️ ${esc(errore(e))}</td></tr>`;
   }
 }
 
@@ -226,7 +458,7 @@ function dataBreve(s){
 }
 
 function disegna(){
-  if(!utenti.length){ $('lista').innerHTML='<tr><td colspan="6" class="vuoto">Nessun account.</td></tr>'; return; }
+  if(!utenti.length){ $('lista').innerHTML='<tr><td colspan="7" class="vuoto">Nessun account.</td></tr>'; return; }
   $('lista').innerHTML=utenti.map(u=>{
     const stato=[];
     if(u.amministratore) stato.push('<span class="badge b-info">Amministratore</span>');
@@ -238,6 +470,7 @@ function disegna(){
     return `<tr>
       <td><div class="nome">${esc(u.nome||'—')}</div><div class="email">${esc(u.email)}</div></td>
       <td>${stato.join('')}</td>
+      <td class="lic">${cellaLicenza(u)}</td>
       <td class="nascondi-mobile" style="color:var(--label3);font-size:.82rem">${dataBreve(u.ultimoAccesso)}</td>
       <td><select onchange="aggiorna('${id}',{genere:this.value})">
         <option value="f" ${u.genere==='f'?'selected':''}>Femminile</option>
@@ -245,6 +478,7 @@ function disegna(){
         <option value="n" ${u.genere==='n'?'selected':''}>Neutro</option></select></td>
       <td class="nascondi-mobile"><input type="checkbox" ${u.demoMode?'checked':''} title="Modalità dimostrativa con pazienti di esempio" onchange="aggiorna('${id}',{demoMode:this.checked})" style="width:auto"></td>
       <td><div class="azioni">
+        ${u.amministratore?'':`<button class="btn btn-primary btn-sm" onclick="apriLicenza('${id}')">Licenza</button>`}
         ${!u.autorizzato && !u.amministratore ? `<button class="btn btn-ghost btn-sm" onclick="azione('${id}','autorizza')">Abilita all'app</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="apriPass('${id}')">Password provvisoria</button>
         ${io?'':(u.bloccato
@@ -274,13 +508,17 @@ async function elimina(uid){
 
 async function creaAccount(){
   const btn=$('n-btn'), m=$('n-msg');
-  const dati={azione:'crea', nome:$('n-nome').value.trim(), email:$('n-email').value.trim(), genere:$('n-genere').value, password:$('n-pass').value};
+  const piano=$('n-piano').value, modello=$('n-modello').value, sconto=$('n-sconto').value;
+  const dati={azione:'crea', nome:$('n-nome').value.trim(), email:$('n-email').value.trim(), genere:$('n-genere').value, password:$('n-pass').value,
+    piano, modello, sconto, scadenza:$('n-scadenza').value, prezzo:prezzoListino(piano, modello, sconto)};
+  if(PIANI_CON_SCADENZA.includes(piano) && !dati.scadenza){ msg(m,'Per questo piano serve una data di scadenza.'); return; }
   if(!dati.nome||!dati.email||!dati.password){ msg(m,'Compila nome, email e password provvisoria.'); return; }
   btn.disabled=true;
   try{
     await portale(dati);
     msg(m,`✅ Account creato. Comunica a ${dati.nome} l'email e la password provvisoria: ${dati.password}`,true);
     $('n-nome').value=''; $('n-email').value=''; $('n-pass').value=''; $('n-genere').value='n';
+    $('n-piano').value='prova'; $('n-sconto').value=''; $('n-scadenza').value=scadenzaIniziale('prova');
     caricaUtenti();
   }catch(e){ msg(m,errore(e)); }
   btn.disabled=false;
