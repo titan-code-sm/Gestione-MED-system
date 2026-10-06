@@ -83,6 +83,19 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .pag{display:flex;gap:10px;align-items:center;font-size:.82rem;padding:6px 0;border-bottom:1px solid var(--separator)}
 .pag:last-child{border-bottom:none}
 @media(max-width:800px){.kpi{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+.modal.pac{width:min(1100px,96vw);height:92vh;display:flex;flex-direction:column;padding:20px}
+.pac-corpo{flex:1;display:grid;grid-template-columns:280px 1fr;gap:14px;min-height:0;margin-top:12px}
+.pac-sinistra{overflow-y:auto;border:1px solid var(--separator);border-radius:10px;padding:6px}
+.pac-gruppo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--label4);padding:10px 8px 4px}
+.pac-voce{display:flex;align-items:center;gap:4px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:.84rem}
+.pac-voce span:first-child{flex:1}
+.pac-voce:hover{background:var(--surface2)}.pac-voce.attiva{background:var(--primary-dim);color:var(--primary);font-weight:600}
+.pac-destra{overflow-y:auto;border:1px solid var(--separator);border-radius:10px;padding:14px}
+.pac-riga{display:grid;gap:8px;align-items:start;padding:7px 0;border-bottom:1px solid var(--separator)}
+.pac-riga>*{min-width:0}
+.pac-riga textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:.85rem;resize:vertical}
+.pac-anteprima{font-size:.8rem;color:var(--label3);padding:5px 0;border-bottom:1px solid var(--separator)}
+@media(max-width:800px){.pac-corpo{grid-template-columns:1fr}}
 @media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.nascondi-mobile{display:none}}
 </style>
 </head>
@@ -192,6 +205,35 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
     <div class="riga" style="justify-content:flex-end;margin-top:8px">
       <button class="btn btn-ghost" onclick="chiudiPass()">Annulla</button>
       <button class="btn btn-primary" id="m-pass-btn" onclick="confermaPass()">Imposta</button>
+    </div>
+  </div>
+</div>
+
+<!-- PACCHETTO STUDIO -->
+<div class="overlay" id="m-pac">
+  <div class="modal pac">
+    <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px"><h3 id="m-pac-titolo" style="margin-bottom:2px">Personalizzazione</h3>
+        <div class="sub" id="pac-info" style="margin:0"></div></div>
+      <div style="min-width:220px"><label for="pac-nome">Nome del pacchetto</label><input id="pac-nome" placeholder="es. Studio Rossi" oninput="_pacModificato=true"></div>
+    </div>
+    <div class="riga" style="margin-top:10px;flex-wrap:wrap">
+      <select id="pac-copia" style="width:auto;max-width:280px" onchange="pacCopiaDa(this.value)"></select>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pac-file').click()">📂 Importa da file</button>
+      <input type="file" id="pac-file" accept=".json,application/json" style="display:none" onchange="pacImporta(this)">
+      <button class="btn btn-ghost btn-sm" onclick="pacEsporta()">💾 Esporta su file</button>
+      <button class="btn btn-ghost btn-sm" onclick="pacMostraVersioni()">🕘 Versioni precedenti</button>
+    </div>
+    <div class="pac-corpo">
+      <div class="pac-sinistra" id="pac-lista"></div>
+      <div class="pac-destra" id="pac-editor"></div>
+    </div>
+    <div class="msg" id="m-pac-msg"></div>
+    <div class="riga" style="justify-content:flex-end;align-items:center;margin-top:6px">
+      <span id="pac-stato" style="flex:1;font-size:.8rem;color:var(--orange);font-weight:600"></span>
+      <button class="btn btn-danger btn-sm" onclick="eliminaPacchettoStudio()">Elimina pacchetto</button>
+      <button class="btn btn-ghost" onclick="chiudiPacchetto()">Chiudi</button>
+      <button class="btn btn-primary" id="pac-salva" onclick="salvaPacchetto()">Salva pacchetto</button>
     </div>
   </div>
 </div>
@@ -333,6 +375,182 @@ function disegnaScadenze(){
     : '<div class="vuoto" style="padding:14px 0">✅ Nessuna scadenza nei prossimi 30 giorni.</div>';
 }
 
+
+// ── PACCHETTO STUDIO (personalizzazione dei testi di un medico) ──
+// Il catalogo con i testi predefiniti di ogni versione è pubblicato insieme
+// all'app (catalogo-pacchetti.json). Il pacchetto contiene solo testi: frasi
+// pronte e testi standard (sezioni), consensi, schemi di prescrizione.
+const CATALOGO_URL=window.CATALOGO_URL||'https://titan-code-sm.github.io/GynoSistem/catalogo-pacchetti.json';
+let _catalogo=null, _pacUid=null, _pac=null, _pacSez='', _pacModificato=false, _pacVersioni=[];
+async function _caricaCatalogo(){
+  if(_catalogo) return _catalogo;
+  const r=await fetch(CATALOGO_URL,{cache:'no-store'});
+  if(!r.ok) throw new Error('catalogo dei testi non raggiungibile');
+  return (_catalogo=await r.json());
+}
+function _pacModello(){ const u=utenti.find(x=>x.uid===_pacUid)||{}; return (u.modello && _catalogo.modelli[u.modello]) ? u.modello : 'gineco'; }
+function _pacSezioni(){
+  const m=_catalogo.modelli[_pacModello()];
+  const extra=[{id:'__consensi', nome:'Consensi informati', gruppo:'Moduli', tipo:'consensi', predefinito:m.consensi}];
+  if(m.schemi && m.schemi.length) extra.push({id:'__schemi', nome:'Schemi di prescrizione', gruppo:'Moduli', tipo:'schemi', predefinito:m.schemi});
+  return m.sezioni.concat(extra);
+}
+function _pacValore(sez){
+  if(sez.id==='__consensi') return _pac.consensi;
+  if(sez.id==='__schemi') return _pac.schemi;
+  return (_pac.sezioni||{})[sez.id];
+}
+function _pacImposta(sez, val){
+  if(sez.id==='__consensi'){ if(val===undefined) delete _pac.consensi; else _pac.consensi=val; }
+  else if(sez.id==='__schemi'){ if(val===undefined) delete _pac.schemi; else _pac.schemi=val; }
+  else{ _pac.sezioni=_pac.sezioni||{}; if(val===undefined) delete _pac.sezioni[sez.id]; else _pac.sezioni[sez.id]=val; }
+  _pacModificato=true;
+}
+// Righe modificabili: [{titolo,testo,pdf?}] per tutti i tipi
+function _pacRighe(sez, val){
+  if(sez.tipo==='elenco') return (val||[]).map(t=>({titolo:t,testo:''}));
+  if(sez.tipo==='consensi'||sez.tipo==='schemi') return (val||[]).map(x=>({titolo:x.titolo,testo:x.testo,pdf:x.pdfUfficiale||''}));
+  return Object.entries(val||{}).filter(([k])=>k!=='').map(([k,v])=>({titolo:k,testo:v}));
+}
+function _pacDaRighe(sez, righe){
+  if(sez.tipo==='elenco') return righe.map(r=>r.titolo);
+  if(sez.tipo==='consensi') return righe.map(r=>r.pdf?{titolo:r.titolo,testo:r.testo,pdfUfficiale:r.pdf}:{titolo:r.titolo,testo:r.testo});
+  if(sez.tipo==='schemi') return righe.map(r=>({titolo:r.titolo,testo:r.testo}));
+  const o=sez.tipo==='modelli'?{'':''}:{}; righe.forEach(r=>{ o[r.titolo]=r.testo; }); return o;
+}
+async function apriPacchetto(uid){
+  const u=utenti.find(x=>x.uid===uid); if(!u) return;
+  _pacUid=uid; _pacSez=''; _pacModificato=false;
+  $('m-pac-titolo').textContent='Personalizzazione — '+(u.nome||u.email);
+  $('m-pac-msg').textContent=''; $('pac-lista').innerHTML='<div class="vuoto">Caricamento…</div>'; $('pac-editor').innerHTML='';
+  $('m-pac').classList.add('show');
+  try{
+    await _caricaCatalogo();
+    const r=(await portale({azione:'leggiPacchetto', uid})).data;
+    _pac=r.pacchetto ? {nome:r.pacchetto.nome||'', sezioni:r.pacchetto.sezioni||{}, ...(r.pacchetto.consensi?{consensi:r.pacchetto.consensi}:{}), ...(r.pacchetto.schemi?{schemi:r.pacchetto.schemi}:{})} : {nome:'', sezioni:{}};
+    _pacVersioni=r.versioni||[];
+    $('pac-nome').value=_pac.nome||'';
+    $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato):' · nessun pacchetto salvato');
+    $('pac-copia').innerHTML='<option value="">Copia da un altro account…</option>'+utenti.filter(x=>x.uid!==uid && x.pacchetto).map(x=>`<option value="${esc(x.uid)}">${esc(x.nome||x.email)}${x.pacchetto.nome?' ('+esc(x.pacchetto.nome)+')':''}</option>`).join('');
+    _pacDisegna();
+  }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-lista').innerHTML=''; }
+}
+function chiudiPacchetto(){
+  if(_pacModificato && !confirm('Ci sono modifiche non salvate al pacchetto: chiudere comunque?')) return;
+  $('m-pac').classList.remove('show'); _pacUid=null;
+}
+function _pacDisegna(){
+  const u=utenti.find(x=>x.uid===_pacUid)||{};
+  const pers=u.sezioniPersonalizzate||[];
+  const sezioni=_pacSezioni(), gruppi=[...new Set(sezioni.map(s=>s.gruppo))];
+  $('pac-lista').innerHTML=gruppi.map(g=>`<div class="pac-gruppo">${esc(g)}</div>`+sezioni.filter(s=>s.gruppo===g).map(s=>{
+    const nel=_pacValore(s)!==undefined, idMedico=s.id==='__consensi'?'consensi':s.id==='__schemi'?'schemi':s.id;
+    return `<div class="pac-voce${s.id===_pacSez?' attiva':''}" onclick="pacScegli('${s.id}')"><span>${esc(s.nome)}</span>
+      ${nel?'<span class="badge b-ok">pacchetto</span>':''}${pers.includes(idMedico)?'<span class="badge b-warn" title="Il medico ha modificato questa sezione da sé: per lui vale la sua versione">medico</span>':''}</div>`;
+  }).join('')).join('');
+  $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
+  _pacDisegnaEditor();
+}
+function pacScegli(id){ _pacSez=id; _pacDisegna(); }
+function _pacDisegnaEditor(){
+  const box=$('pac-editor');
+  const sez=_pacSezioni().find(s=>s.id===_pacSez);
+  if(!sez){ box.innerHTML='<div class="vuoto">Scegli una sezione a sinistra.<br><br>Le sezioni senza il segno «pacchetto» usano i testi predefiniti del programma. «medico» = il medico l\'ha già modificata da sé: per lui conta la sua versione.</div>'; return; }
+  const val=_pacValore(sez);
+  const descr={frasi:'Pulsanti della scheda visita: titolo del pulsante e testo inserito.', modelli:'Testi standard scelti da una tendina (sostituiscono il contenuto del campo).', elenco:'Pulsanti di sola etichetta.', consensi:'Moduli di consenso informato della libreria.', schemi:'Schemi di prescrizione stampabili.'}[sez.tipo]||'';
+  if(val===undefined){
+    const righe=_pacRighe(sez, sez.predefinito);
+    box.innerHTML=`<h3 style="margin-bottom:4px">${esc(sez.nome)}</h3><p class="sub" style="margin-bottom:10px">${descr} Ora usa i <b>testi predefiniti</b> (${righe.length} voci).</p>
+      <button class="btn btn-primary" onclick="pacPersonalizza()">Personalizza questa sezione</button>
+      <div style="margin-top:14px">${righe.map(r=>`<div class="pac-anteprima"><b>${esc(r.titolo)}</b>${r.testo?' — '+esc(r.testo.length>220?r.testo.slice(0,220)+'…':r.testo):''}</div>`).join('')}</div>`;
+    return;
+  }
+  const righe=_pacRighe(sez, val), soloTitolo=sez.tipo==='elenco';
+  window._pacRigheAttuali=righe;
+  box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><h3 style="flex:1">${esc(sez.nome)}</h3>
+      <button class="btn btn-ghost btn-sm" onclick="pacTogli()" title="Il medico tornerà ai testi predefiniti per questa sezione">Togli dal pacchetto</button></div>
+    <p class="sub" style="margin-bottom:8px">${descr}</p>
+    ${righe.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,210px) 1fr'} auto">
+      <input value="${esc(r.titolo)}" placeholder="Titolo" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
+      ${soloTitolo?'':`<textarea rows="${Math.min(10,Math.max(3,Math.ceil((r.testo||'').length/70)))}" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
+      <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" onclick="pacSposta(${i},1)" ${i===righe.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" onclick="pacElimina(${i})">✕</button></div>
+    </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 Con PDF allegato: ${esc(r.pdf)}</div>`:''}`).join('')}
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="pacAggiungi()">+ Aggiungi una voce</button>`;
+}
+function _pacSalvaRighe(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); if(sez) _pacImposta(sez, _pacDaRighe(sez, window._pacRigheAttuali||[])); }
+function pacAggiorna(){ _pacSalvaRighe(); $('pac-stato').textContent='Modifiche non salvate'; }
+function pacPersonalizza(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); _pacImposta(sez, JSON.parse(JSON.stringify(sez.predefinito))); _pacDisegna(); }
+function pacTogli(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); if(!confirm(`Togliere «${sez.nome}» dal pacchetto? Il medico userà i testi predefiniti per questa sezione.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
+function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('#pac-editor .pac-riga input'); if(t.length) t[t.length-1].focus(); }
+function pacElimina(i){ window._pacRigheAttuali.splice(i,1); _pacSalvaRighe(); _pacDisegna(); }
+function pacSposta(i,d){ const r=window._pacRigheAttuali, j=i+d; if(j<0||j>=r.length) return; [r[i],r[j]]=[r[j],r[i]]; _pacSalvaRighe(); _pacDisegna(); }
+function _pacControlla(){
+  for(const sez of _pacSezioni()){
+    const val=_pacValore(sez); if(val===undefined) continue;
+    const righe=_pacRighe(sez,val);
+    if(righe.some(r=>!r.titolo.trim())) return `«${sez.nome}»: ogni voce deve avere un titolo.`;
+    if(sez.tipo!=='elenco' && righe.some(r=>!String(r.testo||'').trim())) return `«${sez.nome}»: ogni voce deve avere un testo.`;
+    const t=righe.map(r=>r.titolo.trim().toLowerCase()); if(new Set(t).size!==t.length) return `«${sez.nome}»: due voci hanno lo stesso titolo.`;
+  }
+  return '';
+}
+async function salvaPacchetto(){
+  _pac.nome=$('pac-nome').value.trim();
+  const errore_=_pacControlla(); if(errore_){ msg($('m-pac-msg'), errore_); return; }
+  const btn=$('pac-salva'); btn.disabled=true;
+  try{
+    await portale({azione:'salvaPacchetto', uid:_pacUid, pacchetto:_pac});
+    _pacModificato=false;
+    msg($('m-pac-msg'),'✅ Pacchetto salvato: il medico lo troverà al prossimo accesso.',true);
+    const r=(await portale({azione:'leggiPacchetto', uid:_pacUid})).data; _pacVersioni=r.versioni||[];
+    caricaUtenti(); _pacDisegna();
+  }catch(e){ msg($('m-pac-msg'), errore(e)); }
+  btn.disabled=false;
+}
+async function eliminaPacchettoStudio(){
+  if(!confirm('Eliminare il pacchetto di questo account? Il medico tornerà ai testi predefiniti. (Si può recuperare dalle versioni precedenti.)')) return;
+  try{ await portale({azione:'eliminaPacchetto', uid:_pacUid}); _pacModificato=false; msg($('m-pac-msg'),'Pacchetto eliminato.',true); await caricaUtenti(); apriPacchetto(_pacUid); }
+  catch(e){ msg($('m-pac-msg'), errore(e)); }
+}
+function pacMostraVersioni(){
+  const box=$('pac-editor'); _pacSez=''; _pacDisegna();
+  box.innerHTML=`<h3 style="margin-bottom:8px">Versioni precedenti</h3>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(v.da||'')}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>');
+}
+async function pacRipristinaVersione(id){
+  if(!confirm('Ripristinare questa versione? Il pacchetto attuale viene a sua volta conservato tra le versioni.')) return;
+  try{ await portale({azione:'ripristinaVersionePacchetto', uid:_pacUid, idVersione:id}); _pacModificato=false; await caricaUtenti(); apriPacchetto(_pacUid); }
+  catch(e){ msg($('m-pac-msg'), errore(e)); }
+}
+async function pacCopiaDa(uidOrigine){
+  if(!uidOrigine) return;
+  $('pac-copia').value='';
+  if(!confirm('Copiare il pacchetto dell\'altro account? Sostituisce le sezioni attuali (salverai tu quando vuoi).')) return;
+  try{
+    const p=(await portale({azione:'leggiPacchetto', uid:uidOrigine})).data.pacchetto;
+    if(!p){ msg($('m-pac-msg'),'Quell\'account non ha un pacchetto.'); return; }
+    _pac={nome:p.nome||'', sezioni:p.sezioni||{}, ...(p.consensi?{consensi:p.consensi}:{}), ...(p.schemi?{schemi:p.schemi}:{})};
+    $('pac-nome').value=_pac.nome; _pacModificato=true; _pacDisegna();
+    msg($('m-pac-msg'),'Pacchetto copiato: controlla e salva.',true);
+  }catch(e){ msg($('m-pac-msg'), errore(e)); }
+}
+function pacEsporta(){
+  _pac.nome=$('pac-nome').value.trim();
+  const u=utenti.find(x=>x.uid===_pacUid)||{};
+  const blob=new Blob([JSON.stringify({formato:'medsystem-pacchetto', versione:1, modello:_pacModello(), creato:new Date().toISOString(), ..._pac},null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pacchetto-'+((_pac.nome||u.nome||'studio').toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+async function pacImporta(input){
+  const f=input.files[0]; input.value=''; if(!f) return;
+  try{
+    const j=JSON.parse(await f.text());
+    if(!j || typeof j!=='object' || (!j.sezioni && !j.consensi && !j.schemi)) throw new Error('il file non è un pacchetto MED System');
+    if(j.modello && j.modello!==_pacModello() && !confirm(`Il pacchetto è per la versione «${j.modello}», l'account usa «${_pacModello()}». Importarlo comunque?`)) return;
+    _pac={nome:j.nome||'', sezioni:j.sezioni||{}, ...(Array.isArray(j.consensi)?{consensi:j.consensi}:{}), ...(Array.isArray(j.schemi)?{schemi:j.schemi}:{})};
+    $('pac-nome').value=_pac.nome; _pacModificato=true; _pacDisegna();
+    msg($('m-pac-msg'),'Pacchetto importato dal file: controlla e salva.',true);
+  }catch(e){ msg($('m-pac-msg'),'File non valido: '+(e.message||e)); }
+}
+
 let _uidLic=null;
 function apriLicenza(uid, conPagamento){
   const u=utenti.find(x=>x.uid===uid); if(!u) return;
@@ -465,6 +683,7 @@ function disegna(){
     if(!u.autorizzato && !u.amministratore) stato.push('<span class="badge b-warn">Non abilitato all\'app</span>');
     stato.push(u.bloccato?'<span class="badge b-ko">Bloccato</span>':'<span class="badge b-ok">Attivo</span>');
     if(u.passwordProvvisoria) stato.push('<span class="badge b-warn">Password provvisoria</span>');
+    if(u.pacchetto) stato.push(`<span class="badge b-info" title="Pacchetto studio">📦 ${esc(u.pacchetto.nome||'Pacchetto')}</span>`);
     const io=u.amministratore;
     const id=esc(u.uid);
     return `<tr>
@@ -478,7 +697,7 @@ function disegna(){
         <option value="n" ${u.genere==='n'?'selected':''}>Neutro</option></select></td>
       <td class="nascondi-mobile"><input type="checkbox" ${u.demoMode?'checked':''} title="Modalità dimostrativa con pazienti di esempio" onchange="aggiorna('${id}',{demoMode:this.checked})" style="width:auto"></td>
       <td><div class="azioni">
-        ${u.amministratore?'':`<button class="btn btn-primary btn-sm" onclick="apriLicenza('${id}')">Licenza</button>`}
+        ${u.amministratore?'':`<button class="btn btn-primary btn-sm" onclick="apriLicenza('${id}')">Licenza</button><button class="btn btn-ghost btn-sm" onclick="apriPacchetto('${id}')">Personalizzazione</button>`}
         ${!u.autorizzato && !u.amministratore ? `<button class="btn btn-ghost btn-sm" onclick="azione('${id}','autorizza')">Abilita all'app</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="apriPass('${id}')">Password provvisoria</button>
         ${io?'':(u.bloccato
