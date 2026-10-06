@@ -86,11 +86,15 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .modal.pac{width:min(1100px,96vw);height:92vh;display:flex;flex-direction:column;padding:20px}
 .pac-corpo{flex:1;display:grid;grid-template-columns:280px 1fr;gap:14px;min-height:0;margin-top:12px}
 .pac-sinistra{overflow-y:auto;border:1px solid var(--separator);border-radius:10px;padding:6px}
-.pac-gruppo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--label4);padding:10px 8px 4px}
+.pac-gruppo{font-size:.82rem;font-weight:700;color:var(--label);padding:12px 8px 2px;border-top:1px solid var(--separator);margin-top:6px}
+.pac-gruppo:first-child{border-top:none;margin-top:0}
+.pac-passo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);padding:8px 8px 2px 14px}
+.pac-voce{padding-left:22px!important}
+.pac-percorso{font-size:.76rem;color:var(--label4);margin-bottom:2px}
 .pac-voce{display:flex;align-items:center;gap:4px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:.84rem}
 .pac-voce span:first-child{flex:1}
 .pac-voce:hover{background:var(--surface2)}.pac-voce.attiva{background:var(--primary-dim);color:var(--primary);font-weight:600}
-.pac-destra{overflow-y:auto;border:1px solid var(--separator);border-radius:10px;padding:14px}
+.pac-destra{overflow-y:auto;overflow-x:hidden;border:1px solid var(--separator);border-radius:10px;padding:14px}
 .pac-riga{display:grid;gap:8px;align-items:start;padding:7px 0;border-bottom:1px solid var(--separator)}
 .pac-riga>*{min-width:0}
 .pac-riga textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:.85rem;resize:vertical}
@@ -391,8 +395,8 @@ async function _caricaCatalogo(){
 function _pacModello(){ const u=utenti.find(x=>x.uid===_pacUid)||{}; return (u.modello && _catalogo.modelli[u.modello]) ? u.modello : 'gineco'; }
 function _pacSezioni(){
   const m=_catalogo.modelli[_pacModello()];
-  const extra=[{id:'__consensi', nome:'Consensi informati', gruppo:'Moduli', tipo:'consensi', predefinito:m.consensi}];
-  if(m.schemi && m.schemi.length) extra.push({id:'__schemi', nome:'Schemi di prescrizione', gruppo:'Moduli', tipo:'schemi', predefinito:m.schemi});
+  const extra=[{id:'__consensi', nome:'Consensi informati', gruppo:'Altri moduli', tipo:'consensi', predefinito:m.consensi}];
+  if(m.schemi && m.schemi.length) extra.push({id:'__schemi', nome:'Schemi di prescrizione', gruppo:'Altri moduli', tipo:'schemi', predefinito:m.schemi});
   return m.sezioni.concat(extra);
 }
 function _pacValore(sez){
@@ -443,11 +447,13 @@ function _pacDisegna(){
   const u=utenti.find(x=>x.uid===_pacUid)||{};
   const pers=u.sezioniPersonalizzate||[];
   const sezioni=_pacSezioni(), gruppi=[...new Set(sezioni.map(s=>s.gruppo))];
-  $('pac-lista').innerHTML=gruppi.map(g=>`<div class="pac-gruppo">${esc(g)}</div>`+sezioni.filter(s=>s.gruppo===g).map(s=>{
+  let passoPrec='';
+  $('pac-lista').innerHTML=gruppi.map(g=>{ passoPrec=''; return `<div class="pac-gruppo">${esc(g)}</div>`+sezioni.filter(s=>s.gruppo===g).map(s=>{
+    const intest=(s.passo && s.passo!==passoPrec) ? `<div class="pac-passo">${esc(s.passo)}</div>` : ''; passoPrec=s.passo||'';
     const nel=_pacValore(s)!==undefined, idMedico=s.id==='__consensi'?'consensi':s.id==='__schemi'?'schemi':s.id;
-    return `<div class="pac-voce${s.id===_pacSez?' attiva':''}" onclick="pacScegli('${s.id}')"><span>${esc(s.nome)}</span>
+    return intest+`<div class="pac-voce${s.id===_pacSez?' attiva':''}" onclick="pacScegli('${s.id}')"><span>${esc(s.nome)}</span>
       ${nel?'<span class="badge b-ok">pacchetto</span>':''}${pers.includes(idMedico)?'<span class="badge b-warn" title="Il medico ha modificato questa sezione da sé: per lui vale la sua versione">medico</span>':''}</div>`;
-  }).join('')).join('');
+  }).join(''); }).join('');
   $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
   _pacDisegnaEditor();
 }
@@ -457,17 +463,19 @@ function _pacDisegnaEditor(){
   const sez=_pacSezioni().find(s=>s.id===_pacSez);
   if(!sez){ box.innerHTML='<div class="vuoto">Scegli una sezione a sinistra.<br><br>Le sezioni senza il segno «pacchetto» usano i testi predefiniti del programma. «medico» = il medico l\'ha già modificata da sé: per lui conta la sua versione.</div>'; return; }
   const val=_pacValore(sez);
-  const descr={frasi:'Pulsanti della scheda visita: titolo del pulsante e testo inserito.', modelli:'Testi standard scelti da una tendina (sostituiscono il contenuto del campo).', elenco:'Pulsanti di sola etichetta.', consensi:'Moduli di consenso informato della libreria.', schemi:'Schemi di prescrizione stampabili.'}[sez.tipo]||'';
+  const descr=sez.id.startsWith('opz_') ? 'Nella visita: voci della tendina «aggiungi» di questo riquadro. Titolo = voce della tendina, testo = ciò che viene inserito.'
+    : ({frasi:'Nella visita: pulsanti sotto questo riquadro. Titolo = scritta del pulsante, testo = ciò che viene inserito.', modelli:'Nella visita: tendina dei testi standard di questo riquadro (il testo scelto sostituisce il contenuto).', elenco:'Nella visita: pulsanti di questo riquadro (aggiungono la loro scritta).', consensi:'Libreria dei consensi informati (sezione Consensi e scelta del consenso a inizio visita).', schemi:'Schemi di prescrizione stampabili della visita ostetrica.'}[sez.tipo]||'');
+  const percorso=`<div class="pac-percorso">${esc(sez.gruppo)}${sez.passo?' › '+esc(sez.passo):''}</div>`;
   if(val===undefined){
     const righe=_pacRighe(sez, sez.predefinito);
-    box.innerHTML=`<h3 style="margin-bottom:4px">${esc(sez.nome)}</h3><p class="sub" style="margin-bottom:10px">${descr} Ora usa i <b>testi predefiniti</b> (${righe.length} voci).</p>
+    box.innerHTML=percorso+`<h3 style="margin-bottom:4px">${esc(sez.nome)}</h3><p class="sub" style="margin-bottom:10px">${descr} Ora usa i <b>testi predefiniti</b> (${righe.length} voci).</p>
       <button class="btn btn-primary" onclick="pacPersonalizza()">Personalizza questa sezione</button>
       <div style="margin-top:14px">${righe.map(r=>`<div class="pac-anteprima"><b>${esc(r.titolo)}</b>${r.testo?' — '+esc(r.testo.length>220?r.testo.slice(0,220)+'…':r.testo):''}</div>`).join('')}</div>`;
     return;
   }
   const righe=_pacRighe(sez, val), soloTitolo=sez.tipo==='elenco';
   window._pacRigheAttuali=righe;
-  box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><h3 style="flex:1">${esc(sez.nome)}</h3>
+  box.innerHTML=percorso+`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><h3 style="flex:1">${esc(sez.nome)}</h3>
       <button class="btn btn-ghost btn-sm" onclick="pacTogli()" title="Il medico tornerà ai testi predefiniti per questa sezione">Togli dal pacchetto</button></div>
     <p class="sub" style="margin-bottom:8px">${descr}</p>
     ${righe.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,210px) 1fr'} auto">
