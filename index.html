@@ -84,22 +84,32 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .pag:last-child{border-bottom:none}
 @media(max-width:800px){.kpi{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
 .modal.pac{width:min(1100px,96vw);height:92vh;display:flex;flex-direction:column;padding:20px}
-.pac-corpo{flex:1;display:grid;grid-template-columns:280px 1fr;gap:14px;min-height:0;margin-top:12px}
-.pac-sinistra{overflow-y:auto;border:1px solid var(--separator);border-radius:10px;padding:6px}
-.pac-gruppo{font-size:.82rem;font-weight:700;color:var(--label);padding:12px 8px 2px;border-top:1px solid var(--separator);margin-top:6px}
-.pac-gruppo:first-child{border-top:none;margin-top:0}
-.pac-passo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);padding:8px 8px 2px 14px}
-.pac-voce{padding-left:22px!important}
-.pac-percorso{font-size:.76rem;color:var(--label4);margin-bottom:2px}
-.pac-voce{display:flex;align-items:center;gap:4px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:.84rem}
-.pac-voce span:first-child{flex:1}
-.pac-voce:hover{background:var(--surface2)}.pac-voce.attiva{background:var(--primary-dim);color:var(--primary);font-weight:600}
-.pac-destra{overflow-y:auto;overflow-x:hidden;border:1px solid var(--separator);border-radius:10px;padding:14px}
+.pac-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.pac-tab{padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:#fff;font-weight:600;font-size:.86rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pac-tab.attiva{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pac-passi{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;padding:6px;background:var(--surface2);border:1px solid var(--separator);border-radius:10px}
+.pac-passi:empty{display:none}
+.pac-passo-btn{padding:6px 12px;border-radius:7px;border:none;background:transparent;font-size:.82rem;font-weight:600;color:var(--label3);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.pac-passo-btn.attiva{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.pac-num{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--green);color:#fff;font-size:.68rem;font-weight:700}
+.pac-tab.attiva .pac-num{background:#fff;color:var(--primary)}
+.pac-schede{flex:1;overflow-y:auto;overflow-x:hidden;margin-top:12px;padding:2px 4px 2px 0;display:flex;flex-direction:column;gap:12px}
+.pac-card{border:1px solid var(--separator);border-radius:12px;padding:14px 16px;background:#fff}
+.pac-card.aperta{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.pac-card-h{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.pac-card-t{font-weight:700;font-size:.98rem}
+.pac-badge-riga{margin-top:4px}
+.pac-descr{font-size:.8rem;color:var(--label4);margin:8px 0 10px}
+.pac-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pac-chip{padding:5px 11px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);font-size:.8rem;font-weight:600;color:var(--label2);cursor:help}
+.pac-tendina{border:1px solid var(--border);border-radius:8px;max-width:520px;overflow:hidden;font-size:.82rem}
+.pac-tendina-h{padding:7px 11px;background:var(--surface2);color:var(--label4);border-bottom:1px solid var(--separator)}
+.pac-tendina-v{padding:6px 11px;border-bottom:1px solid var(--separator);cursor:help}
+.pac-tendina-v:last-child{border-bottom:none}
+.pac-elenco{font-size:.84rem;display:flex;flex-direction:column;gap:4px}
 .pac-riga{display:grid;gap:8px;align-items:start;padding:7px 0;border-bottom:1px solid var(--separator)}
 .pac-riga>*{min-width:0}
 .pac-riga textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:.85rem;resize:vertical}
-.pac-anteprima{font-size:.8rem;color:var(--label3);padding:5px 0;border-bottom:1px solid var(--separator)}
-@media(max-width:800px){.pac-corpo{grid-template-columns:1fr}}
 @media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.nascondi-mobile{display:none}}
 </style>
 </head>
@@ -228,10 +238,9 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
       <button class="btn btn-ghost btn-sm" onclick="pacEsporta()">💾 Esporta su file</button>
       <button class="btn btn-ghost btn-sm" onclick="pacMostraVersioni()">🕘 Versioni precedenti</button>
     </div>
-    <div class="pac-corpo">
-      <div class="pac-sinistra" id="pac-lista"></div>
-      <div class="pac-destra" id="pac-editor"></div>
-    </div>
+    <div class="pac-tabs" id="pac-visite"></div>
+    <div class="pac-passi" id="pac-passi"></div>
+    <div class="pac-schede" id="pac-schede"></div>
     <div class="msg" id="m-pac-msg"></div>
     <div class="riga" style="justify-content:flex-end;align-items:center;margin-top:6px">
       <span id="pac-stato" style="flex:1;font-size:.8rem;color:var(--orange);font-weight:600"></span>
@@ -385,7 +394,7 @@ function disegnaScadenze(){
 // all'app (catalogo-pacchetti.json). Il pacchetto contiene solo testi: frasi
 // pronte e testi standard (sezioni), consensi, schemi di prescrizione.
 const CATALOGO_URL=window.CATALOGO_URL||'https://titan-code-sm.github.io/GynoSistem/catalogo-pacchetti.json';
-let _catalogo=null, _pacUid=null, _pac=null, _pacSez='', _pacModificato=false, _pacVersioni=[];
+let _catalogo=null, _pacUid=null, _pac=null, _pacModificato=false, _pacVersioni=[];
 async function _caricaCatalogo(){
   if(_catalogo) return _catalogo;
   const r=await fetch(CATALOGO_URL,{cache:'no-store'});
@@ -424,9 +433,9 @@ function _pacDaRighe(sez, righe){
 }
 async function apriPacchetto(uid){
   const u=utenti.find(x=>x.uid===uid); if(!u) return;
-  _pacUid=uid; _pacSez=''; _pacModificato=false;
+  _pacUid=uid; _pacVisita=''; _pacPasso=''; _pacAperta=''; _pacVistaVersioni=false; _pacModificato=false;
   $('m-pac-titolo').textContent='Personalizzazione — '+(u.nome||u.email);
-  $('m-pac-msg').textContent=''; $('pac-lista').innerHTML='<div class="vuoto">Caricamento…</div>'; $('pac-editor').innerHTML='';
+  $('m-pac-msg').textContent=''; $('pac-visite').innerHTML=''; $('pac-passi').innerHTML=''; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
   $('m-pac').classList.add('show');
   try{
     await _caricaCatalogo();
@@ -437,59 +446,89 @@ async function apriPacchetto(uid){
     $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato):' · nessun pacchetto salvato');
     $('pac-copia').innerHTML='<option value="">Copia da un altro account…</option>'+utenti.filter(x=>x.uid!==uid && x.pacchetto).map(x=>`<option value="${esc(x.uid)}">${esc(x.nome||x.email)}${x.pacchetto.nome?' ('+esc(x.pacchetto.nome)+')':''}</option>`).join('');
     _pacDisegna();
-  }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-lista').innerHTML=''; }
+  }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-schede').innerHTML=''; }
 }
 function chiudiPacchetto(){
   if(_pacModificato && !confirm('Ci sono modifiche non salvate al pacchetto: chiudere comunque?')) return;
   $('m-pac').classList.remove('show'); _pacUid=null;
 }
+// Vista "come nella visita": tipo di visita → scheda → riquadri.
+let _pacVisita='', _pacPasso='', _pacAperta='', _pacVistaVersioni=false;
+const _PAC_ICONA_VISITA={'Visita ginecologica':'🌸','Visita ostetrica':'🤰','Ecografia ostetrica':'🖥️','Visita proctologica':'🔍','Visita':'🩺','Altri moduli':'📄'};
+function _pacGruppi(){ return [...new Set(_pacSezioni().map(s=>s.gruppo))]; }
+function _pacPassi(g){ return [...new Set(_pacSezioni().filter(s=>s.gruppo===g).map(s=>s.passo||''))]; }
+function _pacIdMedico(s){ return s.id==='__consensi'?'consensi':s.id==='__schemi'?'schemi':s.id; }
+function _pacDescr(s){
+  if(s.id.startsWith('opz_')) return 'Nella visita è una <b>tendina «aggiungi»</b>: il medico sceglie una voce e il testo viene aggiunto al campo.';
+  return ({frasi:'Nella visita sono <b>pulsanti</b> sotto il riquadro: un clic aggiunge il testo al campo.',
+    modelli:'Nella visita è una <b>tendina di testi standard</b>: la voce scelta sostituisce il contenuto del campo.',
+    elenco:'Nella visita sono <b>pulsanti</b> che aggiungono la loro scritta al campo.',
+    consensi:'Libreria dei <b>consensi informati</b>: si stampano o si firmano su schermo, anche all\'inizio di una visita.',
+    schemi:'<b>Schemi di prescrizione</b> stampabili (pulsante «Schemi» nella visita ostetrica).'})[s.tipo]||'';
+}
+function _pacAnteprima(s, righe){
+  if(!righe.length) return '<div class="sub">Nessuna voce.</div>';
+  if(s.tipo==='consensi'||s.tipo==='schemi') return '<div class="pac-elenco">'+righe.map(r=>`<div>📄 ${esc(r.titolo)}${r.pdf?' <span class="sub">(con PDF)</span>':''}</div>`).join('')+'</div>';
+  if(s.id.startsWith('opz_')||s.tipo==='modelli') return `<div class="pac-tendina"><div class="pac-tendina-h">${s.tipo==='modelli'?'Seleziona template':'Aggiungi…'} ▾</div>${righe.map(r=>`<div class="pac-tendina-v" title="${esc(r.testo||'')}">${esc(r.titolo)}</div>`).join('')}</div>`;
+  return '<div class="pac-chips">'+righe.map(r=>`<span class="pac-chip" title="${esc(r.testo||'')}">${esc(r.titolo)}</span>`).join('')+'</div>';
+}
 function _pacDisegna(){
-  const u=utenti.find(x=>x.uid===_pacUid)||{};
-  const pers=u.sezioniPersonalizzate||[];
-  const sezioni=_pacSezioni(), gruppi=[...new Set(sezioni.map(s=>s.gruppo))];
-  let passoPrec='';
-  $('pac-lista').innerHTML=gruppi.map(g=>{ passoPrec=''; return `<div class="pac-gruppo">${esc(g)}</div>`+sezioni.filter(s=>s.gruppo===g).map(s=>{
-    const intest=(s.passo && s.passo!==passoPrec) ? `<div class="pac-passo">${esc(s.passo)}</div>` : ''; passoPrec=s.passo||'';
-    const nel=_pacValore(s)!==undefined, idMedico=s.id==='__consensi'?'consensi':s.id==='__schemi'?'schemi':s.id;
-    return intest+`<div class="pac-voce${s.id===_pacSez?' attiva':''}" onclick="pacScegli('${s.id}')"><span>${esc(s.nome)}</span>
-      ${nel?'<span class="badge b-ok">pacchetto</span>':''}${pers.includes(idMedico)?'<span class="badge b-warn" title="Il medico ha modificato questa sezione da sé: per lui vale la sua versione">medico</span>':''}</div>`;
-  }).join(''); }).join('');
+  if(_pacVistaVersioni){ _pacDisegnaVersioni(); return; }
+  const u=utenti.find(x=>x.uid===_pacUid)||{}, pers=u.sezioniPersonalizzate||[];
+  const sezioni=_pacSezioni(), gruppi=_pacGruppi();
+  if(!gruppi.includes(_pacVisita)) _pacVisita=gruppi[0];
+  const passi=_pacPassi(_pacVisita);
+  if(!passi.includes(_pacPasso)) _pacPasso=passi[0];
+  const nPac=f=>sezioni.filter(f).filter(s=>_pacValore(s)!==undefined).length;
+  $('pac-visite').innerHTML=gruppi.map((g,i)=>{ const n=nPac(s=>s.gruppo===g);
+    return `<button class="pac-tab${g===_pacVisita?' attiva':''}" onclick="pacVisita(${i})">${_PAC_ICONA_VISITA[g]||'📋'} ${esc(g)}${n?`<span class="pac-num" title="Sezioni con i testi dello studio">${n}</span>`:''}</button>`; }).join('');
+  $('pac-passi').innerHTML=passi.length>1||passi[0] ? passi.map((p,i)=>{ const n=nPac(s=>s.gruppo===_pacVisita&&(s.passo||'')===p);
+    return `<button class="pac-passo-btn${p===_pacPasso?' attiva':''}" onclick="pacPasso(${i})">${esc(p||'Generale')}${n?`<span class="pac-num">${n}</span>`:''}</button>`; }).join('') : '';
+  const qui=sezioni.filter(s=>s.gruppo===_pacVisita && (s.passo||'')===_pacPasso);
+  $('pac-schede').innerHTML=qui.map(s=>{
+    const val=_pacValore(s), nel=val!==undefined, aperta=_pacAperta===s.id;
+    const righe=_pacRighe(s, nel?val:s.predefinito), medico=pers.includes(_pacIdMedico(s));
+    let corpo;
+    if(aperta){
+      const soloTitolo=s.tipo==='elenco';
+      window._pacRigheAttuali=_pacRighe(s, val);
+      corpo=window._pacRigheAttuali.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,210px) 1fr'} auto">
+        <input value="${esc(r.titolo)}" placeholder="${s.id.startsWith('opz_')||s.tipo==='modelli'?'Voce della tendina':s.tipo==='consensi'||s.tipo==='schemi'?'Titolo':'Scritta del pulsante'}" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
+        ${soloTitolo?'':`<textarea rows="${Math.min(10,Math.max(3,Math.ceil((r.testo||'').length/70)))}" placeholder="Testo inserito" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
+        <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" title="Sposta su" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" title="Sposta giù" onclick="pacSposta(${i},1)" ${i===window._pacRigheAttuali.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" title="Elimina" onclick="pacElimina(${i})">✕</button></div>
+      </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 PDF allegato: ${esc(r.pdf)}</div>`:''}`).join('')+
+      `<div class="riga" style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="pacAggiungi()">+ Aggiungi una voce</button><span style="flex:1"></span><button class="btn btn-primary btn-sm" onclick="pacChiudiRiquadro()">Fatto</button></div>`;
+    } else corpo=_pacAnteprima(s, righe);
+    return `<div class="pac-card${aperta?' aperta':''}">
+      <div class="pac-card-h">
+        <div style="flex:1"><div class="pac-card-t">${esc(s.nome)}</div>
+          <div class="pac-badge-riga">${nel?'<span class="badge b-ok">Testi dello studio</span>':'<span class="badge b-info">Testi standard</span>'}${medico?'<span class="badge b-warn" title="Il medico ha modificato questa sezione da sé nelle Impostazioni: per lui vale la sua versione">Modificata dal medico</span>':''}</div></div>
+        <div class="riga">${aperta?'':`<button class="btn btn-ghost btn-sm" onclick="pacApriRiquadro('${s.id}')">✏️ Modifica</button>`}${nel&&!aperta?`<button class="btn btn-ghost btn-sm" onclick="pacTogli('${s.id}')" title="Il medico userà i testi standard per questo riquadro">Torna ai testi standard</button>`:''}</div>
+      </div>
+      <div class="pac-descr">${_pacDescr(s)}</div>
+      ${corpo}
+    </div>`;
+  }).join('') || '<div class="vuoto">Nessun riquadro personalizzabile in questa scheda.</div>';
   $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
-  _pacDisegnaEditor();
 }
-function pacScegli(id){ _pacSez=id; _pacDisegna(); }
-function _pacDisegnaEditor(){
-  const box=$('pac-editor');
-  const sez=_pacSezioni().find(s=>s.id===_pacSez);
-  if(!sez){ box.innerHTML='<div class="vuoto">Scegli una sezione a sinistra.<br><br>Le sezioni senza il segno «pacchetto» usano i testi predefiniti del programma. «medico» = il medico l\'ha già modificata da sé: per lui conta la sua versione.</div>'; return; }
-  const val=_pacValore(sez);
-  const descr=sez.id.startsWith('opz_') ? 'Nella visita: voci della tendina «aggiungi» di questo riquadro. Titolo = voce della tendina, testo = ciò che viene inserito.'
-    : ({frasi:'Nella visita: pulsanti sotto questo riquadro. Titolo = scritta del pulsante, testo = ciò che viene inserito.', modelli:'Nella visita: tendina dei testi standard di questo riquadro (il testo scelto sostituisce il contenuto).', elenco:'Nella visita: pulsanti di questo riquadro (aggiungono la loro scritta).', consensi:'Libreria dei consensi informati (sezione Consensi e scelta del consenso a inizio visita).', schemi:'Schemi di prescrizione stampabili della visita ostetrica.'}[sez.tipo]||'');
-  const percorso=`<div class="pac-percorso">${esc(sez.gruppo)}${sez.passo?' › '+esc(sez.passo):''}</div>`;
-  if(val===undefined){
-    const righe=_pacRighe(sez, sez.predefinito);
-    box.innerHTML=percorso+`<h3 style="margin-bottom:4px">${esc(sez.nome)}</h3><p class="sub" style="margin-bottom:10px">${descr} Ora usa i <b>testi predefiniti</b> (${righe.length} voci).</p>
-      <button class="btn btn-primary" onclick="pacPersonalizza()">Personalizza questa sezione</button>
-      <div style="margin-top:14px">${righe.map(r=>`<div class="pac-anteprima"><b>${esc(r.titolo)}</b>${r.testo?' — '+esc(r.testo.length>220?r.testo.slice(0,220)+'…':r.testo):''}</div>`).join('')}</div>`;
-    return;
-  }
-  const righe=_pacRighe(sez, val), soloTitolo=sez.tipo==='elenco';
-  window._pacRigheAttuali=righe;
-  box.innerHTML=percorso+`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><h3 style="flex:1">${esc(sez.nome)}</h3>
-      <button class="btn btn-ghost btn-sm" onclick="pacTogli()" title="Il medico tornerà ai testi predefiniti per questa sezione">Togli dal pacchetto</button></div>
-    <p class="sub" style="margin-bottom:8px">${descr}</p>
-    ${righe.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,210px) 1fr'} auto">
-      <input value="${esc(r.titolo)}" placeholder="Titolo" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
-      ${soloTitolo?'':`<textarea rows="${Math.min(10,Math.max(3,Math.ceil((r.testo||'').length/70)))}" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
-      <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" onclick="pacSposta(${i},1)" ${i===righe.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" onclick="pacElimina(${i})">✕</button></div>
-    </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 Con PDF allegato: ${esc(r.pdf)}</div>`:''}`).join('')}
-    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="pacAggiungi()">+ Aggiungi una voce</button>`;
+function pacVisita(i){ _pacVisita=_pacGruppi()[i]; _pacPasso=''; _pacAperta=''; _pacDisegna(); $('pac-schede').scrollTop=0; }
+function pacPasso(i){ _pacPasso=_pacPassi(_pacVisita)[i]; _pacAperta=''; _pacDisegna(); $('pac-schede').scrollTop=0; }
+// "Modifica" su un riquadro con i testi standard ne fa una copia nel pacchetto
+function pacApriRiquadro(id){
+  const s=_pacSezioni().find(x=>x.id===id); if(!s) return;
+  if(_pacValore(s)===undefined) _pacImposta(s, JSON.parse(JSON.stringify(s.predefinito)));
+  _pacAperta=id; _pacDisegna();
 }
-function _pacSalvaRighe(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); if(sez) _pacImposta(sez, _pacDaRighe(sez, window._pacRigheAttuali||[])); }
+// "Fatto": se i testi coincidono con quelli standard, il riquadro esce dal pacchetto
+function pacChiudiRiquadro(){
+  const s=_pacSezioni().find(x=>x.id===_pacAperta);
+  if(s && JSON.stringify(_pacValore(s))===JSON.stringify(s.predefinito)) _pacImposta(s, undefined);
+  _pacAperta=''; _pacDisegna();
+}
+function _pacSalvaRighe(){ const sez=_pacSezioni().find(s=>s.id===_pacAperta); if(sez) _pacImposta(sez, _pacDaRighe(sez, window._pacRigheAttuali||[])); }
 function pacAggiorna(){ _pacSalvaRighe(); $('pac-stato').textContent='Modifiche non salvate'; }
-function pacPersonalizza(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); _pacImposta(sez, JSON.parse(JSON.stringify(sez.predefinito))); _pacDisegna(); }
-function pacTogli(){ const sez=_pacSezioni().find(s=>s.id===_pacSez); if(!confirm(`Togliere «${sez.nome}» dal pacchetto? Il medico userà i testi predefiniti per questa sezione.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
-function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('#pac-editor .pac-riga input'); if(t.length) t[t.length-1].focus(); }
+function pacTogli(id){ const sez=_pacSezioni().find(s=>s.id===id); if(!confirm(`«${sez.nome}»: tornare ai testi standard? Le modifiche dello studio a questo riquadro verranno tolte dal pacchetto.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
+function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('.pac-card.aperta .pac-riga input'); if(t.length) t[t.length-1].focus(); }
 function pacElimina(i){ window._pacRigheAttuali.splice(i,1); _pacSalvaRighe(); _pacDisegna(); }
 function pacSposta(i,d){ const r=window._pacRigheAttuali, j=i+d; if(j<0||j>=r.length) return; [r[i],r[j]]=[r[j],r[i]]; _pacSalvaRighe(); _pacDisegna(); }
 function _pacControlla(){
@@ -520,9 +559,12 @@ async function eliminaPacchettoStudio(){
   try{ await portale({azione:'eliminaPacchetto', uid:_pacUid}); _pacModificato=false; msg($('m-pac-msg'),'Pacchetto eliminato.',true); await caricaUtenti(); apriPacchetto(_pacUid); }
   catch(e){ msg($('m-pac-msg'), errore(e)); }
 }
-function pacMostraVersioni(){
-  const box=$('pac-editor'); _pacSez=''; _pacDisegna();
-  box.innerHTML=`<h3 style="margin-bottom:8px">Versioni precedenti</h3>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(v.da||'')}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>');
+function pacMostraVersioni(){ _pacVistaVersioni=true; _pacAperta=''; _pacDisegna(); }
+function pacChiudiVersioni(){ _pacVistaVersioni=false; _pacDisegna(); }
+function _pacDisegnaVersioni(){
+  $('pac-visite').innerHTML=''; $('pac-passi').innerHTML='';
+  $('pac-schede').innerHTML=`<div class="pac-card"><div class="pac-card-h"><div class="pac-card-t" style="flex:1">🕘 Versioni precedenti del pacchetto</div><button class="btn btn-ghost btn-sm" onclick="pacChiudiVersioni()">← Torna alla personalizzazione</button></div>
+    <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(v.da||'')}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
 }
 async function pacRipristinaVersione(id){
   if(!confirm('Ripristinare questa versione? Il pacchetto attuale viene a sua volta conservato tra le versioni.')) return;
