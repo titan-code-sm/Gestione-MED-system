@@ -174,6 +174,12 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
   </div>
 
   <div class="card">
+    <h2>Download programmi</h2>
+    <div class="sub">Installer per Windows dell'ultima versione pubblicata. Per pubblicarne una nuova si crea su GitHub un tag <code>desktop-vX.Y.Z</code>: le tre versioni vengono compilate e compaiono qui in automatico (circa 20 minuti).</div>
+    <div id="download-lista" class="sub" style="margin:0">Caricamento…</div>
+  </div>
+
+  <div class="card">
     <h2>Nuovo account</h2>
     <div class="sub">La persona entrerà con questa email e la password provvisoria; al primo accesso dovrà sceglierne una sua.</div>
     <div class="grid">
@@ -431,6 +437,8 @@ function _pacDaRighe(sez, righe){
   if(sez.tipo==='schemi') return righe.map(r=>({titolo:r.titolo,testo:r.testo}));
   const o=sez.tipo==='modelli'?{'':''}:{}; righe.forEach(r=>{ o[r.titolo]=r.testo; }); return o;
 }
+// Chi ha fatto un salvataggio: l'amministratore dal portale o il medico dall'app
+function _pacChi(da){ return !da ? '' : da===ADMIN_EMAIL ? '(da te, dal portale)' : '(dal medico, dall\'app: '+da+')'; }
 async function apriPacchetto(uid){
   const u=utenti.find(x=>x.uid===uid); if(!u) return;
   _pacUid=uid; _pacVisita=''; _pacPasso=''; _pacAperta=''; _pacVistaVersioni=false; _pacModificato=false;
@@ -443,7 +451,7 @@ async function apriPacchetto(uid){
     _pac=r.pacchetto ? {nome:r.pacchetto.nome||'', sezioni:r.pacchetto.sezioni||{}, ...(r.pacchetto.consensi?{consensi:r.pacchetto.consensi}:{}), ...(r.pacchetto.schemi?{schemi:r.pacchetto.schemi}:{})} : {nome:'', sezioni:{}};
     _pacVersioni=r.versioni||[];
     $('pac-nome').value=_pac.nome||'';
-    $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato):' · nessun pacchetto salvato');
+    $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato)+' '+_pacChi(r.pacchetto.da):' · nessun pacchetto salvato');
     $('pac-copia').innerHTML='<option value="">Copia da un altro account…</option>'+utenti.filter(x=>x.uid!==uid && x.pacchetto).map(x=>`<option value="${esc(x.uid)}">${esc(x.nome||x.email)}${x.pacchetto.nome?' ('+esc(x.pacchetto.nome)+')':''}</option>`).join('');
     _pacDisegna();
   }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-schede').innerHTML=''; }
@@ -564,7 +572,7 @@ function pacChiudiVersioni(){ _pacVistaVersioni=false; _pacDisegna(); }
 function _pacDisegnaVersioni(){
   $('pac-visite').innerHTML=''; $('pac-passi').innerHTML='';
   $('pac-schede').innerHTML=`<div class="pac-card"><div class="pac-card-h"><div class="pac-card-t" style="flex:1">🕘 Versioni precedenti del pacchetto</div><button class="btn btn-ghost btn-sm" onclick="pacChiudiVersioni()">← Torna alla personalizzazione</button></div>
-    <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(v.da||'')}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
+    <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(_pacChi(v.da))}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
 }
 async function pacRipristinaVersione(id){
   if(!confirm('Ripristinare questa versione? Il pacchetto attuale viene a sua volta conservato tra le versioni.')) return;
@@ -704,8 +712,26 @@ auth.onAuthStateChanged(async user=>{
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
   $('l-pass').value='';
-  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); }
+  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); caricaDownload(); }
 });
+
+// ── Download programmi: installer dell'ultima release pubblicata dell'app ──
+const RELEASE_URL='https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest';
+async function caricaDownload(){
+  const box=$('download-lista');
+  try{
+    const r=await fetch(RELEASE_URL);
+    if(r.status===404){ box.textContent='Nessuna versione pubblicata per ora.'; return; }
+    if(!r.ok) throw new Error('GitHub non raggiungibile ('+r.status+')');
+    const rel=await r.json();
+    const exe=(rel.assets||[]).filter(a=>/\.exe$/i.test(a.name));
+    if(!exe.length){ box.textContent='L\'ultima versione pubblicata non contiene installer.'; return; }
+    const nomeVersione=n=>/proct/i.test(n)?'MED System Proct':/gineco/i.test(n)?'MED System Gineco':'MED System (base, tutte le specialità)';
+    const ordine=n=>/gineco/i.test(n)?0:/proct/i.test(n)?1:2;
+    box.innerHTML=`<div style="margin-bottom:8px">Versione <strong>${esc((rel.tag_name||'').replace(/^desktop-v/,''))}</strong> · pubblicata ${esc(dataBreve(rel.published_at))}</div>`+
+      exe.sort((a,b)=>ordine(a.name)-ordine(b.name)).map(a=>`<div class="pag"><span style="flex:1">${esc(nomeVersione(a.name))}<span class="sub" style="margin-left:6px">${esc(a.name)} · ${(a.size/1048576).toFixed(1)} MB</span></span><a class="btn btn-primary btn-sm" href="${esc(a.browser_download_url)}">⬇ Scarica</a></div>`).join('');
+  }catch(e){ box.textContent='⚠️ '+(e.message||e); }
+}
 
 async function caricaUtenti(){
   $('lista').innerHTML='<tr><td colspan="7" class="vuoto">Caricamento…</td></tr>';
@@ -733,7 +759,11 @@ function disegna(){
     if(!u.autorizzato && !u.amministratore) stato.push('<span class="badge b-warn">Non abilitato all\'app</span>');
     stato.push(u.bloccato?'<span class="badge b-ko">Bloccato</span>':'<span class="badge b-ok">Attivo</span>');
     if(u.passwordProvvisoria) stato.push('<span class="badge b-warn">Password provvisoria</span>');
-    if(u.pacchetto) stato.push(`<span class="badge b-info" title="Pacchetto studio">📦 ${esc(u.pacchetto.nome||'Pacchetto')}</span>`);
+    if(u.pacchetto){
+      const dalMedico=u.pacchetto.da && u.pacchetto.da!==ADMIN_EMAIL;
+      stato.push(`<span class="badge b-info" title="Personalizzazione: ultimo salvataggio ${esc(dataBreve(u.pacchetto.aggiornato))}${dalMedico?' (dal medico)':''}">📦 ${esc(u.pacchetto.nome||'Personalizzato')}</span>`);
+      if(dalMedico) stato.push(`<span class="badge b-warn" title="Il medico ha modificato i suoi testi dall'app: li trovi in Personalizzazione">✏️ Modificato dal medico ${esc(dataBreve(u.pacchetto.aggiornato))}</span>`);
+    }
     const io=u.amministratore;
     const id=esc(u.uid);
     return `<tr>
