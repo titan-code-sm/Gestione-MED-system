@@ -90,6 +90,21 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .pac-passi{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;padding:6px;background:var(--surface2);border:1px solid var(--separator);border-radius:10px}
 .pac-passi:empty{display:none}
 .pac-sez{max-width:520px;margin-top:14px}
+.pac-corpo{flex:1;min-height:0;display:flex;gap:16px;margin-top:12px}
+.pac-corpo .pac-schede{margin-top:0}
+.pac-indice{width:250px;flex-shrink:0;overflow-y:auto;padding-right:10px;border-right:1px solid var(--separator)}
+.pac-indice:empty{display:none}
+.pac-ind-gruppo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);margin:12px 8px 4px}
+.pac-ind-gruppo:first-child{margin-top:2px}
+.pac-ind-voce{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 8px;border:none;border-radius:7px;background:transparent;font:inherit;font-size:.84rem;color:var(--label2);cursor:pointer}
+.pac-ind-voce:hover{background:var(--surface2)}
+.pac-ind-voce.attiva{background:var(--primary-dim);color:var(--primary);font-weight:600}
+.pac-ind-voce .pac-ind-pers{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.pac-anteprima{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px dashed var(--border)}
+.pac-anteprima-t{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);margin-bottom:8px}
+.pac-anteprima select{max-width:360px}
+@media(min-width:900px){.pac-sez{display:none}}
+@media(max-width:899px){.pac-indice{display:none}}
 .pac-sez select optgroup{font-weight:700}
 .pac-passo-btn{padding:6px 12px;border-radius:7px;border:none;background:transparent;font-size:.82rem;font-weight:600;color:var(--label3);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .pac-passo-btn.attiva{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(15,23,42,.12)}
@@ -135,6 +150,8 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .g2c{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .g2c .card{margin-bottom:0}
 .kpi.k6{grid-template-columns:repeat(3,1fr)}
+.avviso-versioni{background:var(--orange-dim);color:#92400e;border-radius:10px;padding:10px 14px;margin:-4px 0 16px;font-size:.84rem}
+.ver{display:block;margin-top:3px}
 .link-lista{display:flex;flex-direction:column}
 .link-lista a,.guida a{color:var(--primary);text-decoration:none;font-weight:600}
 .link-lista a:hover,.guida a:hover{text-decoration:underline}
@@ -202,6 +219,7 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
   <section class="pagina" id="pag-dashboard">
     <div class="pag-h"><h1>Dashboard</h1><div class="sub">Situazione di account, licenze e incassi. Nessun dato clinico passa da qui.</div></div>
     <div class="kpi" id="dash-kpi"></div>
+    <div class="avviso-versioni" id="dash-versioni" style="display:none"></div>
   <div class="card">
     <h2>Scadenze e incassi</h2>
     <div class="sub">Abbonamenti e prove scaduti o in scadenza nei prossimi 30 giorni. Alla scadenza l'app blocca l'accesso da sola (i dati restano sul PC); per riattivarla registra il pagamento.</div>
@@ -231,7 +249,7 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
     </div>
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>Utente</th><th>Stato</th><th>Licenza</th><th class="nascondi-mobile">Ultimo accesso</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
+        <thead><tr><th>Utente</th><th>Stato</th><th>Licenza</th><th class="nascondi-mobile">Ultimo accesso · app</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
         <tbody id="lista"><tr><td colspan="7" class="vuoto">Caricamento…</td></tr></tbody>
       </table>
     </div>
@@ -344,7 +362,10 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
       <button class="btn btn-ghost btn-sm" onclick="pacMostraVersioni()">🕘 Versioni precedenti</button>
     </div>
     <div class="pac-sez" id="pac-sez-box"><label for="pac-sez">Sezione</label><select id="pac-sez" onchange="pacSezione(this.value)"></select></div>
-    <div class="pac-schede" id="pac-schede"></div>
+    <div class="pac-corpo">
+      <nav class="pac-indice" id="pac-indice" aria-label="Sezioni"></nav>
+      <div class="pac-schede" id="pac-schede"></div>
+    </div>
     <div class="msg" id="m-pac-msg"></div>
     <div class="riga" style="justify-content:flex-end;align-items:center;margin-top:6px">
       <span id="pac-stato" style="flex:1;font-size:.8rem;color:var(--orange);font-weight:600"></span>
@@ -478,6 +499,35 @@ function cellaLicenza(u){
   if(u.prezzo) righe.push(`<div style="color:var(--label4)">${euro(u.prezzo)}${u.sconto?' · '+esc((SCONTI[u.sconto]||{}).nome||''):''}</div>`);
   return righe.join('');
 }
+// ── Versione dell'app di ogni medico ──
+// L'app (dalla 1.7.4) scrive la sua versione nel profilo a ogni apertura; qui
+// la si confronta con l'ultima pubblicata, per sapere chi deve aggiornare.
+let _ultimaVersione='', _ultimaVersioneP=null;
+function caricaUltimaVersione(){
+  if(!_ultimaVersioneP) _ultimaVersioneP=fetch(RELEASE_URL).then(r=>r.ok?r.json():null)
+    .then(rel=>{ _ultimaVersione=rel ? String(rel.tag_name||'').replace(/^desktop-v/,'') : ''; })
+    .catch(()=>{ _ultimaVersioneP=null; });
+  return _ultimaVersioneP;
+}
+function confrontaVersioni(a,b){
+  const pa=String(a).split('.').map(n=>parseInt(n,10)||0), pb=String(b).split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){ const d=(pa[i]||0)-(pb[i]||0); if(d) return d<0?-1:1; }
+  return 0;
+}
+function daAggiornare(u){ return !u.amministratore && !!u.versioneApp && !!_ultimaVersione && confrontaVersioni(u.versioneApp,_ultimaVersione)<0; }
+function cellaVersione(u){
+  if(!u.versioneApp) return '<span class="ver" style="color:var(--label4)" title="Le app precedenti alla 1.7.4 non comunicano la versione">versione non nota</span>';
+  if(daAggiornare(u)) return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">App ${esc(u.versioneApp)} · da aggiornare</span></span>`;
+  return `<span class="ver"><span class="badge b-ok">App ${esc(u.versioneApp)}</span></span>`;
+}
+function disegnaVersioni(){
+  const vecchi=utenti.filter(daAggiornare), box=$('dash-versioni');
+  if(!vecchi.length){ box.style.display='none'; return; }
+  box.innerHTML=`⚠️ <b>${vecchi.length} ${vecchi.length===1?'medico usa':'medici usano'} una versione vecchia dell'app</b> (l'ultima è la ${esc(_ultimaVersione)}): `+
+    vecchi.map(u=>`${esc(u.nome||u.email)} (${esc(u.versioneApp)})`).join(', ')+'. Manda loro il nuovo installer da «Programmi e demo».';
+  box.style.display='block';
+}
+
 function disegnaScadenze(){
   const clienti=utenti.filter(u=>!u.amministratore);
   const anno=String(new Date().getFullYear());
@@ -541,7 +591,7 @@ async function apriPacchetto(uid){
   const u=utenti.find(x=>x.uid===uid); if(!u) return;
   _pacUid=uid; _pacAperta=''; _pacVistaVersioni=false; _pacModificato=false;
   $('m-pac-titolo').textContent='Personalizzazione — '+(u.nome||u.email);
-  $('m-pac-msg').textContent=''; $('pac-sez').innerHTML=''; $('pac-sez-box').style.display='none'; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
+  $('m-pac-msg').textContent=''; $('pac-sez').innerHTML=''; $('pac-indice').innerHTML=''; $('pac-sez-box').style.display='none'; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
   $('m-pac').classList.add('show');
   try{
     await _caricaCatalogo();
@@ -574,6 +624,9 @@ function _pacDescr(s){
 }
 function _pacOpzioni(){
   const sezioni=_pacSezioni(), gruppi=[...new Set(sezioni.map(_pacEtichettaGruppo))];
+  // Elenco delle sezioni a lato (schermi larghi); la tendina resta per quelli stretti
+  $('pac-indice').innerHTML=gruppi.map(g=>`<div class="pac-ind-gruppo">${esc(g)}</div>`+sezioni.filter(x=>_pacEtichettaGruppo(x)===g).map(x=>
+    `<button class="pac-ind-voce${x.id===_pacAperta?' attiva':''}" onclick="pacSezione('${esc(x.id)}')">${esc(x.nome)}${_pacValore(x)!==undefined?'<span class="pac-ind-pers" title="Personalizzata"></span>':''}</button>`).join('')).join('');
   $('pac-sez').innerHTML=gruppi.map(g=>`<optgroup label="${esc(g)}">${sezioni.filter(x=>_pacEtichettaGruppo(x)===g).map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}${_pacValore(x)!==undefined?'  ●':''}</option>`).join('')}</optgroup>`).join('');
 }
 function _pacDisegna(){
@@ -581,7 +634,7 @@ function _pacDisegna(){
   const u=utenti.find(x=>x.uid===_pacUid)||{}, pers=u.sezioniPersonalizzate||[];
   const sezioni=_pacSezioni();
   if(!sezioni.some(x=>x.id===_pacAperta)) _pacAperta=sezioni[0].id;
-  _pacOpzioni(); $('pac-sez').value=_pacAperta; $('pac-sez-box').style.display='';
+  _pacOpzioni(); $('pac-sez').value=_pacAperta; $('pac-sez-box').style.display=''; $('pac-indice').style.display='';
   const s=sezioni.find(x=>x.id===_pacAperta), val=_pacValore(s), nel=val!==undefined;
   const soloTitolo=s.tipo==='elenco', righe=window._pacRigheAttuali=_pacRighe(s, nel?val:s.predefinito);
   const segnapostoTitolo=s.tipo==='elenco'?'Voce':s.id.startsWith('opz_')||s.tipo==='modelli'?'Voce della tendina':s.tipo==='consensi'||s.tipo==='schemi'?'Titolo':'Titolo del pulsante';
@@ -594,8 +647,24 @@ function _pacDisegna(){
       <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" title="Sposta su" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" title="Sposta giù" onclick="pacSposta(${i},1)" ${i===righe.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" title="Elimina" onclick="pacElimina(${i})">✕</button></div>
     </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 PDF allegato: ${esc(r.pdf)}</div>`:''}`).join(''):'<div class="sub" style="padding:10px 0">Nessuna voce: aggiungine una.</div>'}
     <div class="riga" style="margin-top:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="pacAggiungi()">+ Aggiungi una voce</button><span style="flex:1"></span>${nel?`<button class="btn btn-ghost btn-sm" onclick="pacTogli('${s.id}')" title="Il medico userà i testi predefiniti per questa sezione">Ripristina le predefinite</button>`:''}</div>
+    <div class="pac-anteprima" id="pac-anteprima"></div>
   </div>`;
+  _pacAnteprima();
   $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
+}
+// Anteprima di come il medico vedrà la sezione nella scheda visita:
+// pulsanti per frasi ed elenchi, tendina per testi standard e opzioni.
+function _pacAnteprima(){
+  const box=$('pac-anteprima'); if(!box) return;
+  const s=_pacSezioni().find(x=>x.id===_pacAperta);
+  const righe=(window._pacRigheAttuali||[]).filter(r=>(r.titolo||'').trim());
+  if(!s || s.tipo==='consensi' || s.tipo==='schemi'){ box.style.display='none'; return; }
+  box.style.display='';
+  let corpo;
+  if(!righe.length) corpo='<span class="sub">Nessuna voce da mostrare.</span>';
+  else if(s.tipo==='modelli' || s.id.startsWith('opz_')) corpo=`<select>${s.tipo==='modelli'?'<option>— Testo standard —</option>':''}${righe.map(r=>`<option title="${esc(r.testo||'')}">${esc(r.titolo)}</option>`).join('')}</select>`;
+  else corpo=`<div class="pac-chips">${righe.map(r=>`<span class="pac-chip" title="${esc(r.testo||r.titolo)}">${esc(r.titolo)}</span>`).join('')}</div>`;
+  box.innerHTML=`<div class="pac-anteprima-t">Anteprima nella scheda visita${s.tipo==='frasi'&&!s.id.startsWith('opz_')?' · passa il mouse su un pulsante per vedere il testo':''}</div>${corpo}`;
 }
 // Una sezione tornata identica ai testi predefiniti esce dal pacchetto
 function _pacNormalizza(){
@@ -604,7 +673,7 @@ function _pacNormalizza(){
 }
 function pacSezione(id){ _pacNormalizza(); _pacAperta=id; _pacDisegna(); $('pac-schede').scrollTop=0; }
 function _pacSalvaRighe(){ const sez=_pacSezioni().find(s=>s.id===_pacAperta); if(sez) _pacImposta(sez, _pacDaRighe(sez, window._pacRigheAttuali||[])); }
-function pacAggiorna(){ _pacSalvaRighe(); $('pac-stato').textContent='Modifiche non salvate'; }
+function pacAggiorna(){ _pacSalvaRighe(); _pacOpzioni(); $('pac-sez').value=_pacAperta; _pacAnteprima(); $('pac-stato').textContent='Modifiche non salvate'; }
 function pacTogli(id){ const sez=_pacSezioni().find(s=>s.id===id); if(!confirm(`«${sez.nome}»: ripristinare i testi predefiniti? Le modifiche a questa sezione verranno tolte dal pacchetto.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
 function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('.pac-card .pac-riga input'); if(t.length) t[t.length-1].focus(); }
 function pacElimina(i){ window._pacRigheAttuali.splice(i,1); _pacSalvaRighe(); _pacDisegna(); }
@@ -641,7 +710,7 @@ async function eliminaPacchettoStudio(){
 function pacMostraVersioni(){ _pacNormalizza(); _pacVistaVersioni=true; _pacDisegna(); }
 function pacChiudiVersioni(){ _pacVistaVersioni=false; _pacDisegna(); }
 function _pacDisegnaVersioni(){
-  $('pac-sez-box').style.display='none';
+  $('pac-sez-box').style.display='none'; $('pac-indice').style.display='none';
   $('pac-schede').innerHTML=`<div class="pac-card"><div class="pac-card-h"><div class="pac-card-t" style="flex:1">🕘 Versioni precedenti del pacchetto</div><button class="btn btn-ghost btn-sm" onclick="pacChiudiVersioni()">← Torna alla personalizzazione</button></div>
     <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(_pacChi(v.da))}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
 }
@@ -983,6 +1052,8 @@ async function caricaUtenti(){
     disegnaScadenze();
     disegnaDashboard();
     disegnaPersonalizzazioni();
+    disegnaVersioni();
+    caricaUltimaVersione().then(()=>{ if(_ultimaVersione){ disegna(); disegnaVersioni(); } });
   }catch(e){
     $('lista').innerHTML=`<tr><td colspan="7" class="vuoto">⚠️ ${esc(errore(e))}</td></tr>`;
   }
@@ -1013,7 +1084,7 @@ function disegna(){
       <td><div class="nome">${esc(u.nome||'—')}</div><div class="email">${esc(u.email)}</div></td>
       <td>${stato.join('')}</td>
       <td class="lic">${cellaLicenza(u)}</td>
-      <td class="nascondi-mobile" style="color:var(--label3);font-size:.82rem">${dataBreve(u.ultimoAccesso)}</td>
+      <td class="nascondi-mobile" style="color:var(--label3);font-size:.82rem">${dataBreve(u.ultimoAccesso)}${u.amministratore?'':cellaVersione(u)}</td>
       <td><select onchange="aggiorna('${id}',{genere:this.value})">
         <option value="f" ${u.genere==='f'?'selected':''}>Femminile</option>
         <option value="m" ${u.genere==='m'?'selected':''}>Maschile</option>
