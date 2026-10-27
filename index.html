@@ -290,7 +290,7 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
     <div class="pag-h"><h1>Programmi e demo</h1><div class="sub">Installer da mandare ai medici e sito dimostrativo pubblico.</div></div>
   <div class="card">
     <h2>Download programmi</h2>
-    <div class="sub">Installer per Windows dell'ultima versione pubblicata. Per pubblicarne una nuova si crea su GitHub un tag <code>desktop-vX.Y.Z</code>: le tre versioni vengono compilate e compaiono qui in automatico (circa 20 minuti).</div>
+    <div class="sub">Installer per Windows dell'ultima versione pubblicata. Per pubblicarne una nuova si avvia su GitHub il workflow «App desktop» con «Pubblica la release» (vedi Guida): le tre versioni vengono compilate e compaiono qui in automatico (circa 20 minuti).</div>
     <div id="download-lista" class="sub" style="margin:0">Caricamento…</div>
   </div>
   <div class="card">
@@ -839,7 +839,7 @@ function disegnaLink(){
   const link=[
     [SITO_DEMO,'Sito dimostrativo','apribile da chiunque, senza account'],
     [GH+'/releases','Versioni pubblicate (.exe)','installer di Gineco, Proct e Base'],
-    [GH+'/releases/new?target=main','Pubblica una nuova versione','crea il tag desktop-vX.Y.Z'],
+    [GH+'/actions/workflows/desktop.yml','Pubblica una nuova versione','Run workflow su main con «Pubblica la release»'],
     [GH+'/actions','Automazioni GitHub','compilazione .exe e deploy Firebase'],
     [FB+'/overview','Console Firebase','account, database, funzioni'],
   ];
@@ -855,7 +855,7 @@ function disegnaGuida(){
 <tr><td><b>Codice dell'app</b></td><td>${_a(GH,'GitHub · GynoSistem')}</td></tr>
 <tr><td><b>Codice del portale</b></td><td>${_a(GH_PORTALE,'GitHub · Gestione-MED-system')}</td></tr>
 <tr><td><b>Versioni pubblicate (.exe)</b></td><td>${_a(GH+'/releases','Releases')}</td></tr>
-<tr><td><b>Pubblicare una versione</b></td><td>${_a(GH+'/releases/new?target=main','Nuova release')}</td></tr>
+<tr><td><b>Pubblicare una versione</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','App desktop → Run workflow → «Pubblica la release»')}</td></tr>
 <tr><td><b>Compilazione .exe</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','Workflow «App desktop (Windows)»')}</td></tr>
 <tr><td><b>Deploy Firebase</b></td><td>${_a(GH+'/actions/workflows/firebase.yml','Workflow «Firebase (deploy)»')}</td></tr>
 <tr><td><b>Secret di GitHub</b></td><td>${_a(GH+'/settings/secrets/actions','Settings → Secrets → Actions')}</td></tr>
@@ -922,10 +922,10 @@ function disegnaGuida(){
 </ul>`],
 ['💿',"Nuova versione dell'app (.exe)",`
 <ol>
-<li>Le modifiche all'app vanno prima unite nel ramo <code>main</code> di GynoSistem.</li>
-<li>Apri ${_a(GH+'/releases/new?target=main','Nuova release')}, in «Choose a tag» scrivi il nuovo numero (es. <code>desktop-v1.7.2</code>, sempre più alto dell'ultimo) e scegli «Create new tag».</li>
-<li>Titolo, per esempio <code>MED System 1.7.2</code>, poi <b>Publish release</b>.</li>
-<li>In circa 20 minuti GitHub compila i tre installer (Gineco, Proct, Base) e li aggiunge alla release: li trovi in <b>Programmi e demo</b>, pronti da mandare ai medici.</li>
+<li>Le modifiche all'app vanno prima unite nel ramo <code>main</code> di GynoSistem, con il numero di versione aumentato in <code>desktop/src-tauri/tauri.conf.json</code> (es. 1.7.2 → 1.7.3).</li>
+<li>Apri ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop (Windows)')} → <b>Run workflow</b> → ramo <code>main</code> → spunta <b>«Pubblica la release»</b> → <b>Run workflow</b>. (Di solito lo fa Claude per te.)</li>
+<li>In circa 20 minuti GitHub compila i tre installer (Gineco, Proct, Base), crea il tag <code>desktop-v</code> + versione e la release: li trovi in <b>Programmi e demo</b>, pronti da mandare ai medici.</li>
+<li>Senza la spunta «Pubblica» il workflow compila solo gli installer di prova, scaricabili dalla pagina dell'esecuzione (Artifacts).</li>
 </ol>
 <p>Il medico installa il nuovo .exe sopra la versione vecchia: pazienti e impostazioni restano. L'avanzamento della compilazione si vede in ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop')}.</p>`],
 ['☁️','Firebase: funzioni e deploy automatico',`
@@ -936,14 +936,14 @@ function disegnaGuida(){
 <li>Usa il secret di GitHub <code>FIREBASE_SERVICE_ACCOUNT</code>: la chiave dell'account di servizio <code>github-deploy@gynosistem.iam.gserviceaccount.com</code>. Se la chiave viene cancellata, se ne crea una nuova da ${_a(GC+'/iam-admin/serviceaccounts?project=gynosistem','Account di servizio')} (Chiavi → Aggiungi chiave → JSON) e la si incolla al posto del secret.</li>
 <li>Il progetto è sul piano Blaze (a consumo) con quota gratuita: con l'uso attuale il costo atteso è 0 €. Si può impostare un avviso di budget in ${_a(GC+'/billing','Fatturazione')}.</li>
 </ul>`],
-['✉️','Email alle pazienti (non ancora attive)',`
-<p>La sezione «Email» dell'app (promemoria, referti pronti, richiami) invia da <b>un solo indirizzo Gmail</b> per tutti i medici. Oggi i secret <code>EMAIL_USER</code> ed <code>EMAIL_PASS</code> contengono il segnaposto <code>da-configurare</code>, quindi l'invio è spento.</p>
-<p>Per attivarlo:</p>
-<ol>
-<li>Sul Gmail scelto attiva la verifica in due passaggi e crea una ${_a('https://myaccount.google.com/apppasswords','password per le app')}.</li>
-<li>In ${_a(GC+'/security/secret-manager?project=gynosistem','Secret Manager')} apri <code>EMAIL_USER</code> → «Nuova versione» → l'indirizzo Gmail; poi <code>EMAIL_PASS</code> → «Nuova versione» → la password per le app.</li>
-<li>Rilancia ${_a(GH+'/actions/workflows/firebase.yml','Firebase (deploy)')}.</li>
-</ol>`],
+['✉️','Email alle pazienti',`
+<p>La sezione «Email» dell'app (comunicazioni, promemoria degli appuntamenti) invia da <b>un solo indirizzo Gmail per tutti i medici</b>: <code>medsystem.comunicazioni@gmail.com</code> (attivo dal 27/10/2026).</p>
+<ul>
+<li>La paziente vede come mittente il <b>nome del medico</b>. In fondo all'email l'app aggiunge i suoi dati (dall'intestazione delle stampe) e «Per rispondere scrivere a: …» con l'email scelta dal medico in <b>Email → Mittente e risposte</b> (dalla versione 1.7.2; prima, l'email del suo account). «Rispondi» va direttamente al medico.</li>
+<li>Ogni paziente riceve un'email separata: nessuna vede gli indirizzi delle altre.</li>
+<li>L'elenco delle inviate di ogni medico resta sul suo PC; una copia di tutte le email è nella «Posta inviata» della Gmail, dove entri solo tu. Gmail permette circa 500 email al giorno.</li>
+</ul>
+<p>Per cambiare la Gmail o la sua password: crea una nuova ${_a('https://myaccount.google.com/apppasswords','password per le app')}, poi in ${_a(GC+'/security/secret-manager?project=gynosistem','Secret Manager')} aggiungi una «Nuova versione» a <code>EMAIL_USER</code> e/o <code>EMAIL_PASS</code> e rilancia ${_a(GH+'/actions/workflows/firebase.yml','Firebase (deploy)')}.</p>`],
 ['🌐','Sito dimostrativo',`
 <ul>
 <li>Indirizzo: ${_a(SITO_DEMO,SITO_DEMO)}. Si apre senza account, con pazienti di esempio.</li>
