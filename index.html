@@ -89,23 +89,6 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .pac-tab.attiva{background:var(--primary);color:#fff;border-color:var(--primary)}
 .pac-passi{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;padding:6px;background:var(--surface2);border:1px solid var(--separator);border-radius:10px}
 .pac-passi:empty{display:none}
-.pac-sez{max-width:520px;margin-top:14px}
-.pac-corpo{flex:1;min-height:0;display:flex;gap:16px;margin-top:12px}
-.pac-corpo .pac-schede{margin-top:0}
-.pac-indice{width:250px;flex-shrink:0;overflow-y:auto;padding-right:10px;border-right:1px solid var(--separator)}
-.pac-indice:empty{display:none}
-.pac-ind-gruppo{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);margin:12px 8px 4px}
-.pac-ind-gruppo:first-child{margin-top:2px}
-.pac-ind-voce{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 8px;border:none;border-radius:7px;background:transparent;font:inherit;font-size:.84rem;color:var(--label2);cursor:pointer}
-.pac-ind-voce:hover{background:var(--surface2)}
-.pac-ind-voce.attiva{background:var(--primary-dim);color:var(--primary);font-weight:600}
-.pac-ind-voce .pac-ind-pers{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
-.pac-anteprima{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px dashed var(--border)}
-.pac-anteprima-t{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--label4);margin-bottom:8px}
-.pac-anteprima select{max-width:360px}
-@media(min-width:900px){.pac-sez{display:none}}
-@media(max-width:899px){.pac-indice{display:none}}
-.pac-sez select optgroup{font-weight:700}
 .pac-passo-btn{padding:6px 12px;border-radius:7px;border:none;background:transparent;font-size:.82rem;font-weight:600;color:var(--label3);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .pac-passo-btn.attiva{background:#fff;color:var(--primary);box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .pac-num{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--green);color:#fff;font-size:.68rem;font-weight:700}
@@ -128,59 +111,6 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
 .pac-riga>*{min-width:0}
 .pac-riga textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font:inherit;font-size:.85rem;resize:vertical}
 @media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.nascondi-mobile{display:none}}
-/* ── Struttura: menu laterale per categorie + pagine ── */
-.layout{display:flex;min-height:100vh}
-.side{width:236px;flex:none;background:var(--surface);border-right:1px solid var(--separator);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-.side-h{display:flex;align-items:center;gap:10px;padding:20px 18px 18px;border-bottom:1px solid var(--separator)}
-.side-h .logo{width:38px;height:38px;border-radius:10px}
-.side-t{font-weight:700;font-size:1rem;letter-spacing:-.01em}
-.side-s{font-size:.74rem;color:var(--label4)}
-.side-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
-.nav-v{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:none;background:transparent;border-radius:8px;font-weight:600;font-size:.88rem;color:var(--label3);cursor:pointer;text-align:left}
-.nav-v:hover{background:var(--surface2);color:var(--label)}
-.nav-v.attiva{background:var(--primary-dim);color:var(--primary)}
-.nav-i{width:22px;text-align:center}
-.nav-v .pac-num{margin-left:auto;background:var(--orange)}
-.side-f{padding:14px 18px;border-top:1px solid var(--separator)}
-.main{flex:1;min-width:0;padding:28px 32px 60px;max-width:1180px}
-.pagina{display:none}
-.pagina.attiva{display:block}
-.pag-h{margin-bottom:20px}
-.pag-h h1{font-size:1.45rem;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
-.g2c{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.g2c .card{margin-bottom:0}
-.kpi.k6{grid-template-columns:repeat(3,1fr)}
-.avviso-versioni{background:var(--orange-dim);color:#92400e;border-radius:10px;padding:10px 14px;margin:-4px 0 16px;font-size:.84rem}
-.ver{display:block;margin-top:3px}
-.link-lista{display:flex;flex-direction:column}
-.link-lista a,.guida a{color:var(--primary);text-decoration:none;font-weight:600}
-.link-lista a:hover,.guida a:hover{text-decoration:underline}
-.link-riga{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--separator);font-size:.85rem}
-.link-riga:last-child{border-bottom:none}
-.link-riga .sub{margin:0;font-size:.78rem}
-.guida details{background:var(--surface);border:1px solid var(--separator);border-radius:12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
-.guida summary{cursor:pointer;list-style:none;padding:15px 20px;font-weight:600;font-size:.98rem;display:flex;align-items:center;gap:10px}
-.guida summary::-webkit-details-marker{display:none}
-.guida summary::after{content:'▾';margin-left:auto;color:var(--label4)}
-.guida details[open] summary::after{content:'▴'}
-.guida .corpo{padding:0 20px 18px;font-size:.88rem;line-height:1.6;color:var(--label2)}
-.guida .corpo p{margin:0 0 10px}
-.guida .corpo ul,.guida .corpo ol{margin:0 0 10px 20px}
-.guida .corpo li{margin-bottom:4px}
-.guida .corpo h4{font-size:.86rem;margin:14px 0 6px;color:var(--label)}
-.guida code{background:var(--surface2);border:1px solid var(--separator);border-radius:5px;padding:1px 6px;font-size:.82rem}
-.guida .nota{background:var(--orange-dim);border-radius:8px;padding:10px 12px;margin:8px 0 12px;font-size:.84rem}
-.guida table td,.guida table th{padding:7px 8px;font-size:.84rem}
-@media(max-width:900px){
-  .layout{flex-direction:column}
-  .side{width:auto;height:auto;position:sticky;top:0;z-index:20;flex-direction:row;align-items:center;border-right:none;border-bottom:1px solid var(--separator)}
-  .side-h{border-bottom:none;padding:10px 12px}.side-h>div{display:none}
-  .side-nav{flex-direction:row;overflow-x:auto;padding:8px 6px}
-  .nav-v{white-space:nowrap;width:auto}
-  .side-f{border-top:none;padding:8px 12px}.side-f .sub{display:none}
-  .main{padding:20px 16px 50px}
-  .g2c{grid-template-columns:1fr}.kpi.k6{grid-template-columns:1fr 1fr}
-}
 </style>
 </head>
 <body>
@@ -196,64 +126,54 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
       <div class="campo"><label for="l-pass">Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" id="l-btn">Accedi</button>
     </form>
+    <div style="text-align:center;margin-top:12px"><a href="#" onclick="event.preventDefault();recuperaPassword()" style="color:var(--primary);font-size:.84rem;text-decoration:none">Password dimenticata?</a></div>
     <div class="msg err" id="l-msg"></div>
   </div>
 </div>
 
 <!-- PORTALE -->
-<div class="layout" id="vista-portale" style="display:none">
-  <aside class="side">
-    <div class="side-h"><img class="logo" src="logo.png" alt="MED System"><div><div class="side-t">MED System</div><div class="side-s">Portale amministratore</div></div></div>
-    <nav class="side-nav">
-      <button class="nav-v" id="nav-dashboard" onclick="vai('dashboard')"><span class="nav-i">📊</span>Dashboard</button>
-      <button class="nav-v" id="nav-account" onclick="vai('account')"><span class="nav-i">👥</span>Account</button>
-      <button class="nav-v" id="nav-personalizzazioni" onclick="vai('personalizzazioni')"><span class="nav-i">✏️</span>Personalizzazioni</button>
-      <button class="nav-v" id="nav-licenze" onclick="vai('licenze')"><span class="nav-i">💶</span>Licenze e listino</button>
-      <button class="nav-v" id="nav-programmi" onclick="vai('programmi')"><span class="nav-i">💿</span>Programmi e demo</button>
-      <button class="nav-v" id="nav-guida" onclick="vai('guida')"><span class="nav-i">📘</span>Guida</button>
-    </nav>
-    <div class="side-f"><div class="sub" id="io" style="margin:0 0 8px;word-break:break-all"></div><button class="btn btn-ghost btn-sm" onclick="esci()">Esci</button></div>
-  </aside>
-  <main class="main">
+<div class="wrap" id="vista-portale" style="display:none">
+  <header>
+    <img class="logo" src="logo.png" alt="MED System">
+    <div><h1>Portale utenti</h1><div class="sub">Account di accesso a MED System. Nessun dato clinico passa da qui.</div></div>
+    <div class="spazio"></div>
+    <span class="sub" id="io"></span>
+    <button class="btn btn-ghost btn-sm" onclick="esci()">Esci</button>
+  </header>
 
-  <section class="pagina" id="pag-dashboard">
-    <div class="pag-h"><h1>Dashboard</h1><div class="sub">Situazione di account, licenze e incassi. Nessun dato clinico passa da qui.</div></div>
-    <div class="kpi" id="dash-kpi"></div>
-    <div class="avviso-versioni" id="dash-versioni" style="display:none"></div>
+  <div class="card">
+    <h2>Sito dimostrativo</h2>
+    <div class="sub">Il sito pubblico di MED System si apre senza account, con pazienti di esempio. Scegli quale modello mostra.</div>
+    <div class="riga" style="align-items:center;max-width:520px">
+      <select id="demo-modello"></select>
+      <button class="btn btn-primary" onclick="salvaModelloDemo()">Salva</button>
+      <a class="btn btn-ghost" href="https://titan-code-sm.github.io/GynoSistem/" target="_blank" rel="noopener">Apri il sito ↗</a>
+    </div>
+    <div class="msg" id="demo-msg"></div>
+  </div>
+
+  <details class="card">
+    <summary><h2>Listino e piani</h2><div class="sub" style="margin:0">Prezzi indicativi IVA esclusa: sono quelli proposti in automatico quando assegni un piano (sempre modificabili).</div></summary>
+    <div style="overflow-x:auto;margin-top:14px">
+      <table class="listino">
+        <thead><tr><th>Piano</th><th class="num">Base</th><th class="num">Specialistico (Gineco, Proct)</th><th>Durata / note</th></tr></thead>
+        <tbody id="listino-piani"></tbody>
+      </table>
+    </div>
+    <div class="g2" style="margin-top:16px">
+      <div><div style="font-weight:600;margin-bottom:6px">Sconti</div><div class="lic" id="listino-sconti"></div></div>
+      <div><div style="font-weight:600;margin-bottom:6px">Servizi extra</div><div class="lic">
+        Installazione e configurazione a distanza: 50 €<br>Formazione (1 ora): 50 €<br>Personalizzazioni: 40-50 €/ora<br>Recupero dati da altri programmi: a preventivo</div></div>
+    </div>
+  </details>
+
   <div class="card">
     <h2>Scadenze e incassi</h2>
     <div class="sub">Abbonamenti e prove scaduti o in scadenza nei prossimi 30 giorni. Alla scadenza l'app blocca l'accesso da sola (i dati restano sul PC); per riattivarla registra il pagamento.</div>
     <div class="kpi" id="kpi"></div>
     <div id="scadenze"></div>
   </div>
-    <div class="g2c">
-      <div class="card">
-        <h2>Ultime modifiche dei medici</h2>
-        <div class="sub">Testi (frasi pronte, consensi, schemi) salvati dai medici dall'app. Si aprono in Personalizzazioni.</div>
-        <div id="dash-modifiche"></div>
-      </div>
-      <div class="card">
-        <h2>Collegamenti rapidi</h2>
-        <div class="sub">I link che servono più spesso. Tutti gli altri sono nella Guida.</div>
-        <div class="link-lista" id="dash-link"></div>
-      </div>
-    </div>
-  </section>
 
-  <section class="pagina" id="pag-account">
-    <div class="pag-h"><h1>Account</h1><div class="sub">Crea gli accessi dei medici, blocca o sblocca, imposta una password provvisoria, elimina.</div></div>
-  <div class="card">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <div style="flex:1"><h2>Account</h2><div class="sub" style="margin:0">Blocca o sblocca l'accesso, imposta una password provvisoria se è stata dimenticata, elimina.</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="caricaUtenti()">↻ Aggiorna</button>
-    </div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead><tr><th>Utente</th><th>Stato</th><th>Licenza</th><th class="nascondi-mobile">Ultimo accesso · app</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
-        <tbody id="lista"><tr><td colspan="7" class="vuoto">Caricamento…</td></tr></tbody>
-      </table>
-    </div>
-  </div>
   <div class="card">
     <h2>Nuovo account</h2>
     <div class="sub">La persona entrerà con questa email e la password provvisoria; al primo accesso dovrà sceglierne una sua.</div>
@@ -274,61 +194,19 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
     <div style="margin-top:14px"><button class="btn btn-primary" id="n-btn" onclick="creaAccount()">Crea account</button></div>
     <div class="msg" id="n-msg"></div>
   </div>
-  </section>
 
-  <section class="pagina" id="pag-personalizzazioni">
-    <div class="pag-h"><h1>Personalizzazioni</h1><div class="sub">I testi di ogni medico: frasi pronte e testi standard delle visite, consensi, schemi di prescrizione. Quello che salvi qui arriva al medico al suo prossimo accesso; quello che il medico salva dall'app compare qui.</div></div>
-    <div class="card">
-      <div style="overflow-x:auto"><table>
-        <thead><tr><th>Medico</th><th>Versione</th><th>Personalizzazione</th><th class="nascondi-mobile">Ultimo salvataggio</th><th></th></tr></thead>
-        <tbody id="pers-lista"><tr><td colspan="5" class="vuoto">Caricamento…</td></tr></tbody>
-      </table></div>
-    </div>
-  </section>
-
-  <section class="pagina" id="pag-licenze">
-    <div class="pag-h"><h1>Licenze e listino</h1><div class="sub">Piani, prezzi e sconti. La licenza di ogni medico si modifica dal pulsante «Licenza» nella pagina Account o dalla Dashboard.</div></div>
   <div class="card">
-    <h2>Listino e piani</h2><div class="sub">Prezzi indicativi IVA esclusa: sono quelli proposti in automatico quando assegni un piano (sempre modificabili).</div>
-    <div style="overflow-x:auto;margin-top:14px">
-      <table class="listino">
-        <thead><tr><th>Piano</th><th class="num">Base</th><th class="num">Specialistico (Gineco, Proct)</th><th>Durata / note</th></tr></thead>
-        <tbody id="listino-piani"></tbody>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1"><h2>Account</h2><div class="sub" style="margin:0">Blocca o sblocca l'accesso, imposta una password provvisoria se è stata dimenticata, elimina.</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="caricaUtenti()">↻ Aggiorna</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Utente</th><th>Stato</th><th>Licenza</th><th class="nascondi-mobile">Ultimo accesso</th><th>Genere</th><th class="nascondi-mobile">Demo</th><th></th></tr></thead>
+        <tbody id="lista"><tr><td colspan="7" class="vuoto">Caricamento…</td></tr></tbody>
       </table>
     </div>
-    <div class="g2" style="margin-top:16px">
-      <div><div style="font-weight:600;margin-bottom:6px">Sconti</div><div class="lic" id="listino-sconti"></div></div>
-      <div><div style="font-weight:600;margin-bottom:6px">Servizi extra</div><div class="lic">
-        Installazione e configurazione a distanza: 50 €<br>Formazione (1 ora): 50 €<br>Personalizzazioni: 40-50 €/ora<br>Recupero dati da altri programmi: a preventivo</div></div>
-    </div>
   </div>
-  </section>
-
-  <section class="pagina" id="pag-programmi">
-    <div class="pag-h"><h1>Programmi e demo</h1><div class="sub">Installer da mandare ai medici e sito dimostrativo pubblico.</div></div>
-  <div class="card">
-    <h2>Download programmi</h2>
-    <div class="sub">Installer per Windows dell'ultima versione pubblicata. Per pubblicarne una nuova si avvia su GitHub il workflow «App desktop» con «Pubblica la release» (vedi Guida): le tre versioni vengono compilate e compaiono qui in automatico (circa 20 minuti).</div>
-    <div id="download-lista" class="sub" style="margin:0">Caricamento…</div>
-  </div>
-  <div class="card">
-    <h2>Sito dimostrativo</h2>
-    <div class="sub">Il sito pubblico di MED System si apre senza account, con pazienti di esempio. Scegli quale modello mostra.</div>
-    <div class="riga" style="align-items:center;max-width:520px">
-      <select id="demo-modello"></select>
-      <button class="btn btn-primary" onclick="salvaModelloDemo()">Salva</button>
-      <a class="btn btn-ghost" href="https://titan-code-sm.github.io/GynoSistem/" target="_blank" rel="noopener">Apri il sito ↗</a>
-    </div>
-    <div class="msg" id="demo-msg"></div>
-  </div>
-  </section>
-
-  <section class="pagina" id="pag-guida">
-    <div class="pag-h"><h1>Guida</h1><div class="sub">Come funziona MED System, dove stanno i dati, come si fanno backup, aggiornamenti e deploy. Con tutti i link.</div></div>
-    <div id="guida"></div>
-  </section>
-
-  </main>
 </div>
 
 <!-- PASSWORD PROVVISORIA -->
@@ -361,11 +239,9 @@ details.card summary h2::after{content:' ▾';color:var(--label4);font-weight:40
       <button class="btn btn-ghost btn-sm" onclick="pacEsporta()">💾 Esporta su file</button>
       <button class="btn btn-ghost btn-sm" onclick="pacMostraVersioni()">🕘 Versioni precedenti</button>
     </div>
-    <div class="pac-sez" id="pac-sez-box"><label for="pac-sez">Sezione</label><select id="pac-sez" onchange="pacSezione(this.value)"></select></div>
-    <div class="pac-corpo">
-      <nav class="pac-indice" id="pac-indice" aria-label="Sezioni"></nav>
-      <div class="pac-schede" id="pac-schede"></div>
-    </div>
+    <div class="pac-tabs" id="pac-visite"></div>
+    <div class="pac-passi" id="pac-passi"></div>
+    <div class="pac-schede" id="pac-schede"></div>
     <div class="msg" id="m-pac-msg"></div>
     <div class="riga" style="justify-content:flex-end;align-items:center;margin-top:6px">
       <span id="pac-stato" style="flex:1;font-size:.8rem;color:var(--orange);font-weight:600"></span>
@@ -499,35 +375,6 @@ function cellaLicenza(u){
   if(u.prezzo) righe.push(`<div style="color:var(--label4)">${euro(u.prezzo)}${u.sconto?' · '+esc((SCONTI[u.sconto]||{}).nome||''):''}</div>`);
   return righe.join('');
 }
-// ── Versione dell'app di ogni medico ──
-// L'app (dalla 1.7.4) scrive la sua versione nel profilo a ogni apertura; qui
-// la si confronta con l'ultima pubblicata, per sapere chi deve aggiornare.
-let _ultimaVersione='', _ultimaVersioneP=null;
-function caricaUltimaVersione(){
-  if(!_ultimaVersioneP) _ultimaVersioneP=fetch(RELEASE_URL).then(r=>r.ok?r.json():null)
-    .then(rel=>{ _ultimaVersione=rel ? String(rel.tag_name||'').replace(/^desktop-v/,'') : ''; })
-    .catch(()=>{ _ultimaVersioneP=null; });
-  return _ultimaVersioneP;
-}
-function confrontaVersioni(a,b){
-  const pa=String(a).split('.').map(n=>parseInt(n,10)||0), pb=String(b).split('.').map(n=>parseInt(n,10)||0);
-  for(let i=0;i<Math.max(pa.length,pb.length);i++){ const d=(pa[i]||0)-(pb[i]||0); if(d) return d<0?-1:1; }
-  return 0;
-}
-function daAggiornare(u){ return !u.amministratore && !!u.versioneApp && !!_ultimaVersione && confrontaVersioni(u.versioneApp,_ultimaVersione)<0; }
-function cellaVersione(u){
-  if(!u.versioneApp) return '<span class="ver" style="color:var(--label4)" title="Le app precedenti alla 1.7.4 non comunicano la versione">versione non nota</span>';
-  if(daAggiornare(u)) return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">App ${esc(u.versioneApp)} · da aggiornare</span></span>`;
-  return `<span class="ver"><span class="badge b-ok">App ${esc(u.versioneApp)}</span></span>`;
-}
-function disegnaVersioni(){
-  const vecchi=utenti.filter(daAggiornare), box=$('dash-versioni');
-  if(!vecchi.length){ box.style.display='none'; return; }
-  box.innerHTML=`⚠️ <b>${vecchi.length} ${vecchi.length===1?'medico usa':'medici usano'} una versione vecchia dell'app</b> (l'ultima è la ${esc(_ultimaVersione)}): `+
-    vecchi.map(u=>`${esc(u.nome||u.email)} (${esc(u.versioneApp)})`).join(', ')+'. Manda loro il nuovo installer da «Programmi e demo».';
-  box.style.display='block';
-}
-
 function disegnaScadenze(){
   const clienti=utenti.filter(u=>!u.amministratore);
   const anno=String(new Date().getFullYear());
@@ -585,13 +432,11 @@ function _pacDaRighe(sez, righe){
   if(sez.tipo==='schemi') return righe.map(r=>({titolo:r.titolo,testo:r.testo}));
   const o=sez.tipo==='modelli'?{'':''}:{}; righe.forEach(r=>{ o[r.titolo]=r.testo; }); return o;
 }
-// Chi ha fatto un salvataggio: l'amministratore dal portale o il medico dall'app
-function _pacChi(da){ return !da ? '' : da===ADMIN_EMAIL ? '(da te, dal portale)' : '(dal medico, dall\'app: '+da+')'; }
 async function apriPacchetto(uid){
   const u=utenti.find(x=>x.uid===uid); if(!u) return;
-  _pacUid=uid; _pacAperta=''; _pacVistaVersioni=false; _pacModificato=false;
+  _pacUid=uid; _pacVisita=''; _pacPasso=''; _pacAperta=''; _pacVistaVersioni=false; _pacModificato=false;
   $('m-pac-titolo').textContent='Personalizzazione — '+(u.nome||u.email);
-  $('m-pac-msg').textContent=''; $('pac-sez').innerHTML=''; $('pac-indice').innerHTML=''; $('pac-sez-box').style.display='none'; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
+  $('m-pac-msg').textContent=''; $('pac-visite').innerHTML=''; $('pac-passi').innerHTML=''; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
   $('m-pac').classList.add('show');
   try{
     await _caricaCatalogo();
@@ -599,7 +444,7 @@ async function apriPacchetto(uid){
     _pac=r.pacchetto ? {nome:r.pacchetto.nome||'', sezioni:r.pacchetto.sezioni||{}, ...(r.pacchetto.consensi?{consensi:r.pacchetto.consensi}:{}), ...(r.pacchetto.schemi?{schemi:r.pacchetto.schemi}:{})} : {nome:'', sezioni:{}};
     _pacVersioni=r.versioni||[];
     $('pac-nome').value=_pac.nome||'';
-    $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato)+' '+_pacChi(r.pacchetto.da):' · nessun pacchetto salvato');
+    $('pac-info').textContent=(VERSIONI[_pacModello()]||{}).nome+(r.pacchetto&&r.pacchetto.aggiornato?' · ultimo salvataggio '+dataBreve(r.pacchetto.aggiornato):' · nessun pacchetto salvato');
     $('pac-copia').innerHTML='<option value="">Copia da un altro account…</option>'+utenti.filter(x=>x.uid!==uid && x.pacchetto).map(x=>`<option value="${esc(x.uid)}">${esc(x.nome||x.email)}${x.pacchetto.nome?' ('+esc(x.pacchetto.nome)+')':''}</option>`).join('');
     _pacDisegna();
   }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-schede').innerHTML=''; }
@@ -608,74 +453,83 @@ function chiudiPacchetto(){
   if(_pacModificato && !confirm('Ci sono modifiche non salvate al pacchetto: chiudere comunque?')) return;
   $('m-pac').classList.remove('show'); _pacUid=null;
 }
-// Editor come nell'app (Impostazioni → Frasi pronte e testi standard): una
-// tendina "Sezione" raggruppata per tipo di visita e scheda, e le voci della
-// sezione scelta modificabili sul posto (↑ ↓ ✕, + Aggiungi).
-let _pacAperta='', _pacVistaVersioni=false;
+// Vista "come nella visita": tipo di visita → scheda → riquadri.
+let _pacVisita='', _pacPasso='', _pacAperta='', _pacVistaVersioni=false;
+const _PAC_ICONA_VISITA={'Visita ginecologica':'🌸','Visita ostetrica':'🤰','Ecografia ostetrica':'🖥️','Visita proctologica':'🔍','Visita':'🩺','Altri moduli':'📄'};
+function _pacGruppi(){ return [...new Set(_pacSezioni().map(s=>s.gruppo))]; }
+function _pacPassi(g){ return [...new Set(_pacSezioni().filter(s=>s.gruppo===g).map(s=>s.passo||''))]; }
 function _pacIdMedico(s){ return s.id==='__consensi'?'consensi':s.id==='__schemi'?'schemi':s.id; }
-function _pacEtichettaGruppo(s){ return s.gruppo+(s.passo?' — '+s.passo:''); }
 function _pacDescr(s){
-  if(s.id.startsWith('opz_')) return 'Ogni voce è una <b>voce della tendina</b> di questo riquadro: il titolo è la voce, il testo è ciò che viene inserito.';
-  return ({frasi:'Ogni voce è un <b>pulsante</b> nella scheda visita: il titolo è la scritta del pulsante, il testo è ciò che viene inserito.',
-    modelli:'Ogni voce è un <b>testo standard</b> scelto dalla tendina della scheda visita (sostituisce il contenuto del campo).',
-    elenco:'Ogni voce è un <b>pulsante</b> che aggiunge la sua scritta al campo.',
+  if(s.id.startsWith('opz_')) return 'Nella visita è una <b>tendina «aggiungi»</b>: il medico sceglie una voce e il testo viene aggiunto al campo.';
+  return ({frasi:'Nella visita sono <b>pulsanti</b> sotto il riquadro: un clic aggiunge il testo al campo.',
+    modelli:'Nella visita è una <b>tendina di testi standard</b>: la voce scelta sostituisce il contenuto del campo.',
+    elenco:'Nella visita sono <b>pulsanti</b> che aggiungono la loro scritta al campo.',
     consensi:'Libreria dei <b>consensi informati</b>: si stampano o si firmano su schermo, anche all\'inizio di una visita.',
     schemi:'<b>Schemi di prescrizione</b> stampabili (pulsante «Schemi» nella visita ostetrica).'})[s.tipo]||'';
 }
-function _pacOpzioni(){
-  const sezioni=_pacSezioni(), gruppi=[...new Set(sezioni.map(_pacEtichettaGruppo))];
-  // Elenco delle sezioni a lato (schermi larghi); la tendina resta per quelli stretti
-  $('pac-indice').innerHTML=gruppi.map(g=>`<div class="pac-ind-gruppo">${esc(g)}</div>`+sezioni.filter(x=>_pacEtichettaGruppo(x)===g).map(x=>
-    `<button class="pac-ind-voce${x.id===_pacAperta?' attiva':''}" onclick="pacSezione('${esc(x.id)}')">${esc(x.nome)}${_pacValore(x)!==undefined?'<span class="pac-ind-pers" title="Personalizzata"></span>':''}</button>`).join('')).join('');
-  $('pac-sez').innerHTML=gruppi.map(g=>`<optgroup label="${esc(g)}">${sezioni.filter(x=>_pacEtichettaGruppo(x)===g).map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}${_pacValore(x)!==undefined?'  ●':''}</option>`).join('')}</optgroup>`).join('');
+function _pacAnteprima(s, righe){
+  if(!righe.length) return '<div class="sub">Nessuna voce.</div>';
+  if(s.tipo==='consensi'||s.tipo==='schemi') return '<div class="pac-elenco">'+righe.map(r=>`<div>📄 ${esc(r.titolo)}${r.pdf?' <span class="sub">(con PDF)</span>':''}</div>`).join('')+'</div>';
+  if(s.id.startsWith('opz_')||s.tipo==='modelli') return `<div class="pac-tendina"><div class="pac-tendina-h">${s.tipo==='modelli'?'Seleziona template':'Aggiungi…'} ▾</div>${righe.map(r=>`<div class="pac-tendina-v" title="${esc(r.testo||'')}">${esc(r.titolo)}</div>`).join('')}</div>`;
+  return '<div class="pac-chips">'+righe.map(r=>`<span class="pac-chip" title="${esc(r.testo||'')}">${esc(r.titolo)}</span>`).join('')+'</div>';
 }
 function _pacDisegna(){
   if(_pacVistaVersioni){ _pacDisegnaVersioni(); return; }
   const u=utenti.find(x=>x.uid===_pacUid)||{}, pers=u.sezioniPersonalizzate||[];
-  const sezioni=_pacSezioni();
-  if(!sezioni.some(x=>x.id===_pacAperta)) _pacAperta=sezioni[0].id;
-  _pacOpzioni(); $('pac-sez').value=_pacAperta; $('pac-sez-box').style.display=''; $('pac-indice').style.display='';
-  const s=sezioni.find(x=>x.id===_pacAperta), val=_pacValore(s), nel=val!==undefined;
-  const soloTitolo=s.tipo==='elenco', righe=window._pacRigheAttuali=_pacRighe(s, nel?val:s.predefinito);
-  const segnapostoTitolo=s.tipo==='elenco'?'Voce':s.id.startsWith('opz_')||s.tipo==='modelli'?'Voce della tendina':s.tipo==='consensi'||s.tipo==='schemi'?'Titolo':'Titolo del pulsante';
-  $('pac-schede').innerHTML=`<div class="pac-card">
-    <div class="pac-descr" style="margin-top:0">${s.passo?`<span style="color:var(--label4)">${esc(s.gruppo)} › ${esc(s.passo)}</span><br>`:''}${_pacDescr(s)}
-      ${nel?'<span class="badge b-ok">Personalizzata</span>':'<span class="badge b-info">Predefinita</span>'}${pers.includes(_pacIdMedico(s))?'<span class="badge b-warn" title="Il medico ha modifiche a questa sezione salvate solo sul suo PC, non ancora arrivate qui">Modifiche del medico in attesa di invio</span>':''}</div>
-    ${righe.length?righe.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,220px) 1fr'} auto">
-      <input value="${esc(r.titolo)}" placeholder="${segnapostoTitolo}" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
-      ${soloTitolo?'':`<textarea rows="${Math.min(8,Math.max(2,Math.ceil((r.testo||'').length/90)))}" placeholder="Testo inserito nella scheda" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
-      <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" title="Sposta su" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" title="Sposta giù" onclick="pacSposta(${i},1)" ${i===righe.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" title="Elimina" onclick="pacElimina(${i})">✕</button></div>
-    </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 PDF allegato: ${esc(r.pdf)}</div>`:''}`).join(''):'<div class="sub" style="padding:10px 0">Nessuna voce: aggiungine una.</div>'}
-    <div class="riga" style="margin-top:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="pacAggiungi()">+ Aggiungi una voce</button><span style="flex:1"></span>${nel?`<button class="btn btn-ghost btn-sm" onclick="pacTogli('${s.id}')" title="Il medico userà i testi predefiniti per questa sezione">Ripristina le predefinite</button>`:''}</div>
-    <div class="pac-anteprima" id="pac-anteprima"></div>
-  </div>`;
-  _pacAnteprima();
+  const sezioni=_pacSezioni(), gruppi=_pacGruppi();
+  if(!gruppi.includes(_pacVisita)) _pacVisita=gruppi[0];
+  const passi=_pacPassi(_pacVisita);
+  if(!passi.includes(_pacPasso)) _pacPasso=passi[0];
+  const nPac=f=>sezioni.filter(f).filter(s=>_pacValore(s)!==undefined).length;
+  $('pac-visite').innerHTML=gruppi.map((g,i)=>{ const n=nPac(s=>s.gruppo===g);
+    return `<button class="pac-tab${g===_pacVisita?' attiva':''}" onclick="pacVisita(${i})">${_PAC_ICONA_VISITA[g]||'📋'} ${esc(g)}${n?`<span class="pac-num" title="Sezioni con i testi dello studio">${n}</span>`:''}</button>`; }).join('');
+  $('pac-passi').innerHTML=passi.length>1||passi[0] ? passi.map((p,i)=>{ const n=nPac(s=>s.gruppo===_pacVisita&&(s.passo||'')===p);
+    return `<button class="pac-passo-btn${p===_pacPasso?' attiva':''}" onclick="pacPasso(${i})">${esc(p||'Generale')}${n?`<span class="pac-num">${n}</span>`:''}</button>`; }).join('') : '';
+  const qui=sezioni.filter(s=>s.gruppo===_pacVisita && (s.passo||'')===_pacPasso);
+  $('pac-schede').innerHTML=qui.map(s=>{
+    const val=_pacValore(s), nel=val!==undefined, aperta=_pacAperta===s.id;
+    const righe=_pacRighe(s, nel?val:s.predefinito), medico=pers.includes(_pacIdMedico(s));
+    let corpo;
+    if(aperta){
+      const soloTitolo=s.tipo==='elenco';
+      window._pacRigheAttuali=_pacRighe(s, val);
+      corpo=window._pacRigheAttuali.map((r,i)=>`<div class="pac-riga" style="grid-template-columns:${soloTitolo?'1fr':'minmax(140px,210px) 1fr'} auto">
+        <input value="${esc(r.titolo)}" placeholder="${s.id.startsWith('opz_')||s.tipo==='modelli'?'Voce della tendina':s.tipo==='consensi'||s.tipo==='schemi'?'Titolo':'Scritta del pulsante'}" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
+        ${soloTitolo?'':`<textarea rows="${Math.min(10,Math.max(3,Math.ceil((r.testo||'').length/70)))}" placeholder="Testo inserito" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
+        <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" title="Sposta su" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" title="Sposta giù" onclick="pacSposta(${i},1)" ${i===window._pacRigheAttuali.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" title="Elimina" onclick="pacElimina(${i})">✕</button></div>
+      </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 PDF allegato: ${esc(r.pdf)}</div>`:''}`).join('')+
+      `<div class="riga" style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="pacAggiungi()">+ Aggiungi una voce</button><span style="flex:1"></span><button class="btn btn-primary btn-sm" onclick="pacChiudiRiquadro()">Fatto</button></div>`;
+    } else corpo=_pacAnteprima(s, righe);
+    return `<div class="pac-card${aperta?' aperta':''}">
+      <div class="pac-card-h">
+        <div style="flex:1"><div class="pac-card-t">${esc(s.nome)}</div>
+          <div class="pac-badge-riga">${nel?'<span class="badge b-ok">Testi dello studio</span>':'<span class="badge b-info">Testi standard</span>'}${medico?'<span class="badge b-warn" title="Il medico ha modificato questa sezione da sé nelle Impostazioni: per lui vale la sua versione">Modificata dal medico</span>':''}</div></div>
+        <div class="riga">${aperta?'':`<button class="btn btn-ghost btn-sm" onclick="pacApriRiquadro('${s.id}')">✏️ Modifica</button>`}${nel&&!aperta?`<button class="btn btn-ghost btn-sm" onclick="pacTogli('${s.id}')" title="Il medico userà i testi standard per questo riquadro">Torna ai testi standard</button>`:''}</div>
+      </div>
+      <div class="pac-descr">${_pacDescr(s)}</div>
+      ${corpo}
+    </div>`;
+  }).join('') || '<div class="vuoto">Nessun riquadro personalizzabile in questa scheda.</div>';
   $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
 }
-// Anteprima di come il medico vedrà la sezione nella scheda visita:
-// pulsanti per frasi ed elenchi, tendina per testi standard e opzioni.
-function _pacAnteprima(){
-  const box=$('pac-anteprima'); if(!box) return;
-  const s=_pacSezioni().find(x=>x.id===_pacAperta);
-  const righe=(window._pacRigheAttuali||[]).filter(r=>(r.titolo||'').trim());
-  if(!s || s.tipo==='consensi' || s.tipo==='schemi'){ box.style.display='none'; return; }
-  box.style.display='';
-  let corpo;
-  if(!righe.length) corpo='<span class="sub">Nessuna voce da mostrare.</span>';
-  else if(s.tipo==='modelli' || s.id.startsWith('opz_')) corpo=`<select>${s.tipo==='modelli'?'<option>— Testo standard —</option>':''}${righe.map(r=>`<option title="${esc(r.testo||'')}">${esc(r.titolo)}</option>`).join('')}</select>`;
-  else corpo=`<div class="pac-chips">${righe.map(r=>`<span class="pac-chip" title="${esc(r.testo||r.titolo)}">${esc(r.titolo)}</span>`).join('')}</div>`;
-  box.innerHTML=`<div class="pac-anteprima-t">Anteprima nella scheda visita${s.tipo==='frasi'&&!s.id.startsWith('opz_')?' · passa il mouse su un pulsante per vedere il testo':''}</div>${corpo}`;
+function pacVisita(i){ _pacVisita=_pacGruppi()[i]; _pacPasso=''; _pacAperta=''; _pacDisegna(); $('pac-schede').scrollTop=0; }
+function pacPasso(i){ _pacPasso=_pacPassi(_pacVisita)[i]; _pacAperta=''; _pacDisegna(); $('pac-schede').scrollTop=0; }
+// "Modifica" su un riquadro con i testi standard ne fa una copia nel pacchetto
+function pacApriRiquadro(id){
+  const s=_pacSezioni().find(x=>x.id===id); if(!s) return;
+  if(_pacValore(s)===undefined) _pacImposta(s, JSON.parse(JSON.stringify(s.predefinito)));
+  _pacAperta=id; _pacDisegna();
 }
-// Una sezione tornata identica ai testi predefiniti esce dal pacchetto
-function _pacNormalizza(){
+// "Fatto": se i testi coincidono con quelli standard, il riquadro esce dal pacchetto
+function pacChiudiRiquadro(){
   const s=_pacSezioni().find(x=>x.id===_pacAperta);
-  if(s && _pacValore(s)!==undefined && JSON.stringify(_pacValore(s))===JSON.stringify(s.predefinito)) _pacImposta(s, undefined);
+  if(s && JSON.stringify(_pacValore(s))===JSON.stringify(s.predefinito)) _pacImposta(s, undefined);
+  _pacAperta=''; _pacDisegna();
 }
-function pacSezione(id){ _pacNormalizza(); _pacAperta=id; _pacDisegna(); $('pac-schede').scrollTop=0; }
 function _pacSalvaRighe(){ const sez=_pacSezioni().find(s=>s.id===_pacAperta); if(sez) _pacImposta(sez, _pacDaRighe(sez, window._pacRigheAttuali||[])); }
-function pacAggiorna(){ _pacSalvaRighe(); _pacOpzioni(); $('pac-sez').value=_pacAperta; _pacAnteprima(); $('pac-stato').textContent='Modifiche non salvate'; }
-function pacTogli(id){ const sez=_pacSezioni().find(s=>s.id===id); if(!confirm(`«${sez.nome}»: ripristinare i testi predefiniti? Le modifiche a questa sezione verranno tolte dal pacchetto.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
-function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('.pac-card .pac-riga input'); if(t.length) t[t.length-1].focus(); }
+function pacAggiorna(){ _pacSalvaRighe(); $('pac-stato').textContent='Modifiche non salvate'; }
+function pacTogli(id){ const sez=_pacSezioni().find(s=>s.id===id); if(!confirm(`«${sez.nome}»: tornare ai testi standard? Le modifiche dello studio a questo riquadro verranno tolte dal pacchetto.`)) return; _pacImposta(sez, undefined); _pacDisegna(); }
+function pacAggiungi(){ window._pacRigheAttuali.push({titolo:'',testo:''}); _pacSalvaRighe(); _pacDisegna(); const t=document.querySelectorAll('.pac-card.aperta .pac-riga input'); if(t.length) t[t.length-1].focus(); }
 function pacElimina(i){ window._pacRigheAttuali.splice(i,1); _pacSalvaRighe(); _pacDisegna(); }
 function pacSposta(i,d){ const r=window._pacRigheAttuali, j=i+d; if(j<0||j>=r.length) return; [r[i],r[j]]=[r[j],r[i]]; _pacSalvaRighe(); _pacDisegna(); }
 function _pacControlla(){
@@ -690,7 +544,6 @@ function _pacControlla(){
 }
 async function salvaPacchetto(){
   _pac.nome=$('pac-nome').value.trim();
-  _pacNormalizza();
   const errore_=_pacControlla(); if(errore_){ msg($('m-pac-msg'), errore_); return; }
   const btn=$('pac-salva'); btn.disabled=true;
   try{
@@ -707,12 +560,12 @@ async function eliminaPacchettoStudio(){
   try{ await portale({azione:'eliminaPacchetto', uid:_pacUid}); _pacModificato=false; msg($('m-pac-msg'),'Pacchetto eliminato.',true); await caricaUtenti(); apriPacchetto(_pacUid); }
   catch(e){ msg($('m-pac-msg'), errore(e)); }
 }
-function pacMostraVersioni(){ _pacNormalizza(); _pacVistaVersioni=true; _pacDisegna(); }
+function pacMostraVersioni(){ _pacVistaVersioni=true; _pacAperta=''; _pacDisegna(); }
 function pacChiudiVersioni(){ _pacVistaVersioni=false; _pacDisegna(); }
 function _pacDisegnaVersioni(){
-  $('pac-sez-box').style.display='none'; $('pac-indice').style.display='none';
+  $('pac-visite').innerHTML=''; $('pac-passi').innerHTML='';
   $('pac-schede').innerHTML=`<div class="pac-card"><div class="pac-card-h"><div class="pac-card-t" style="flex:1">🕘 Versioni precedenti del pacchetto</div><button class="btn btn-ghost btn-sm" onclick="pacChiudiVersioni()">← Torna alla personalizzazione</button></div>
-    <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(_pacChi(v.da))}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
+    <div class="pac-descr">Ogni salvataggio conserva la versione precedente (le ultime 20).</div>`+(_pacVersioni.length?_pacVersioni.map(v=>`<div class="pag"><span style="flex:1">${dataBreve(v.salvato)}${v.nome?' · '+esc(v.nome):''}<span class="sub" style="margin-left:6px">${esc(v.da||'')}</span></span><button class="btn btn-ghost btn-sm" onclick="pacRipristinaVersione('${esc(v.id)}')">Ripristina</button></div>`).join(''):'<div class="sub">Nessuna versione precedente: si crea a ogni salvataggio.</div>')+'</div>';
 }
 async function pacRipristinaVersione(id){
   if(!confirm('Ripristinare questa versione? Il pacchetto attuale viene a sua volta conservato tra le versioni.')) return;
@@ -841,6 +694,15 @@ async function accedi(){
   catch(e){ msg($('l-msg'),'Email o password non corretti.'); }
   btn.disabled=false;
 }
+async function recuperaPassword(){
+  const email=($('l-email').value.trim()||ADMIN_EMAIL);
+  if(email.toLowerCase()!==ADMIN_EMAIL){ msg($('l-msg'),'Il recupero è disponibile solo per l\'account amministratore.'); return; }
+  try{
+    auth.languageCode='it';
+    await auth.sendPasswordResetEmail(email);
+    msg($('l-msg'),`✅ Ti abbiamo inviato un'email a ${email} con il link per scegliere una nuova password (controlla anche lo spam).`,true);
+  }catch(e){ msg($('l-msg'),'Invio non riuscito: '+errore(e)); }
+}
 function esci(){ auth.signOut(); }
 
 auth.onAuthStateChanged(async user=>{
@@ -852,196 +714,8 @@ auth.onAuthStateChanged(async user=>{
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
   $('l-pass').value='';
-  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); caricaDownload(); disegnaGuida(); disegnaLink(); vai((location.hash||'').slice(1)||'dashboard'); }
+  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); }
 });
-
-// ── Navigazione: una pagina per categoria (il nome resta nell'indirizzo) ──
-const PAGINE=['dashboard','account','personalizzazioni','licenze','programmi','guida'];
-function vai(id){
-  if(!PAGINE.includes(id)) id='dashboard';
-  PAGINE.forEach(p=>{ $('pag-'+p).classList.toggle('attiva',p===id); $('nav-'+p).classList.toggle('attiva',p===id); });
-  if(location.hash!=='#'+id) history.replaceState(null,'','#'+id);
-  window.scrollTo(0,0);
-}
-
-// ── Dashboard ──
-// Modifiche dei medici: pacchetti il cui ultimo salvataggio non viene dal portale
-function _modificheMedici(){
-  return utenti.filter(u=>u.pacchetto && u.pacchetto.da && u.pacchetto.da!==ADMIN_EMAIL && u.pacchetto.aggiornato)
-    .sort((a,b)=>b.pacchetto.aggiornato.localeCompare(a.pacchetto.aggiornato));
-}
-function disegnaDashboard(){
-  const clienti=utenti.filter(u=>!u.amministratore);
-  const attivi=clienti.filter(u=>!u.bloccato).length;
-  const inScadenza=clienti.filter(u=>{ const st=statoScadenza(u); return st && st.g<=30; }).length;
-  const settimana=new Date(Date.now()-7*86400000).toISOString();
-  const mod=_modificheMedici(), modRecenti=mod.filter(u=>u.pacchetto.aggiornato>=settimana).length;
-  $('dash-kpi').className='kpi k6';
-  $('dash-kpi').innerHTML=`<div><b>${clienti.length}</b><span>account medici</span></div><div><b>${attivi}</b><span>attivi (non bloccati)</span></div>`+
-    `<div><b style="color:${inScadenza?'var(--orange)':'inherit'}">${inScadenza}</b><span>licenze scadute o in scadenza (30 g)</span></div>`+
-    `<div><b>${clienti.filter(u=>u.pacchetto).length}</b><span>medici con testi personalizzati</span></div>`+
-    `<div><b style="color:${modRecenti?'var(--orange)':'inherit'}">${modRecenti}</b><span>modifiche dei medici negli ultimi 7 giorni</span></div>`+
-    `<div><b>${clienti.filter(u=>u.demoMode).length}</b><span>account in modalità demo</span></div>`;
-  $('dash-modifiche').innerHTML=mod.length ? mod.slice(0,6).map(u=>`<div class="link-riga"><span style="flex:1"><span class="nome">${esc(u.nome||u.email)}</span><div class="sub">${esc(dataBreve(u.pacchetto.aggiornato))}</div></span><button class="btn btn-ghost btn-sm" onclick="apriPacchetto('${esc(u.uid)}')">Apri</button></div>`).join('')
-    : '<div class="vuoto" style="padding:14px 0">Nessuna modifica dei medici finora.</div>';
-  const n=$('nav-personalizzazioni'); n.querySelector('.pac-num')?.remove();
-  if(modRecenti) n.insertAdjacentHTML('beforeend',`<span class="pac-num" title="Modifiche dei medici negli ultimi 7 giorni">${modRecenti}</span>`);
-}
-function disegnaPersonalizzazioni(){
-  const medici=utenti.filter(u=>!u.amministratore);
-  $('pers-lista').innerHTML=medici.length ? medici.map(u=>{
-    const p=u.pacchetto, dalMedico=p && p.da && p.da!==ADMIN_EMAIL;
-    return `<tr><td><div class="nome">${esc(u.nome||'—')}</div><div class="email">${esc(u.email)}</div></td>
-      <td class="lic">${esc((VERSIONI[u.modello]||{}).nome||'—')}</td>
-      <td>${p?`<span class="badge b-ok">📦 ${esc(p.nome||'Personalizzato')}</span>`:'<span class="badge b-info">Testi predefiniti</span>'}${dalMedico?'<span class="badge b-warn">✏️ Modificato dal medico</span>':''}</td>
-      <td class="nascondi-mobile lic">${p?esc(dataBreve(p.aggiornato))+'<div style="color:var(--label4)">'+(dalMedico?'dal medico, dall\'app':'da te, dal portale')+'</div>':'—'}</td>
-      <td><div class="azioni"><button class="btn btn-primary btn-sm" onclick="apriPacchetto('${esc(u.uid)}')">Apri</button></div></td></tr>`;
-  }).join('') : '<tr><td colspan="5" class="vuoto">Nessun account medico.</td></tr>';
-}
-
-// ── Collegamenti e guida ──
-const GH='https://github.com/titan-code-sm/GynoSistem', GH_PORTALE='https://github.com/titan-code-sm/Gestione-MED-system';
-const FB='https://console.firebase.google.com/project/gynosistem', GC='https://console.cloud.google.com';
-const SITO_DEMO='https://titan-code-sm.github.io/GynoSistem/';
-const _a=(url,testo)=>`<a href="${url}" target="_blank" rel="noopener">${testo} ↗</a>`;
-function disegnaLink(){
-  const link=[
-    [SITO_DEMO,'Sito dimostrativo','apribile da chiunque, senza account'],
-    [GH+'/releases','Versioni pubblicate (.exe)','installer di Gineco, Proct e Base'],
-    [GH+'/actions/workflows/desktop.yml','Pubblica una nuova versione','Run workflow su main con «Pubblica la release»'],
-    [GH+'/actions','Automazioni GitHub','compilazione .exe e deploy Firebase'],
-    [FB+'/overview','Console Firebase','account, database, funzioni'],
-  ];
-  $('dash-link').innerHTML=link.map(([u,t,d])=>`<div class="link-riga"><span style="flex:1">${_a(u,t)}<div class="sub">${d}</div></span></div>`).join('');
-}
-function disegnaGuida(){
-  const portaleUrl=location.origin+location.pathname;
-  const sez=[
-['🔗','Tutti i link',`
-<table><tbody>
-<tr><td><b>Portale (questa pagina)</b></td><td>${_a(portaleUrl,portaleUrl)}</td></tr>
-<tr><td><b>Sito dimostrativo</b></td><td>${_a(SITO_DEMO,SITO_DEMO)}</td></tr>
-<tr><td><b>Codice dell'app</b></td><td>${_a(GH,'GitHub · GynoSistem')}</td></tr>
-<tr><td><b>Codice del portale</b></td><td>${_a(GH_PORTALE,'GitHub · Gestione-MED-system')}</td></tr>
-<tr><td><b>Versioni pubblicate (.exe)</b></td><td>${_a(GH+'/releases','Releases')}</td></tr>
-<tr><td><b>Pubblicare una versione</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','App desktop → Run workflow → «Pubblica la release»')}</td></tr>
-<tr><td><b>Compilazione .exe</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','Workflow «App desktop (Windows)»')}</td></tr>
-<tr><td><b>Deploy Firebase</b></td><td>${_a(GH+'/actions/workflows/firebase.yml','Workflow «Firebase (deploy)»')}</td></tr>
-<tr><td><b>Secret di GitHub</b></td><td>${_a(GH+'/settings/secrets/actions','Settings → Secrets → Actions')}</td></tr>
-<tr><td><b>Console Firebase</b></td><td>${_a(FB+'/overview','Panoramica')} · ${_a(FB+'/authentication/users','Account di accesso')} · ${_a(FB+'/firestore','Database Firestore')}</td></tr>
-<tr><td><b>Google Cloud</b></td><td>${_a(GC+'/functions/list?project=gynosistem','Cloud Functions e log')} · ${_a(GC+'/security/secret-manager?project=gynosistem','Secret Manager')} · ${_a(GC+'/iam-admin/serviceaccounts?project=gynosistem','Account di servizio')} · ${_a(GC+'/billing','Fatturazione e budget')}</td></tr>
-<tr><td><b>Password per le app Gmail</b></td><td>${_a('https://myaccount.google.com/apppasswords','Account Google → Password per le app')}</td></tr>
-</tbody></table>`],
-['🧭','Come è fatto MED System',`
-<p>Ci sono quattro pezzi:</p>
-<ul>
-<li><b>L'app sul PC del medico</b> (Windows): MED System Gineco, MED System Proct o MED System (Base). Pazienti, visite, appuntamenti, allegati e consensi firmati restano <b>solo su quel PC</b>.</li>
-<li><b>Firebase</b> (Google): contiene solo gli <b>account</b> (email e password), le <b>licenze</b>, i <b>testi personalizzati</b> di ogni medico e la scelta del modello del sito demo. <b>Mai dati delle pazienti.</b></li>
-<li><b>Questo portale</b>: da qui gestisci account, licenze, testi dei medici, download e sito demo. Lo può usare solo ${esc(ADMIN_EMAIL)}.</li>
-<li><b>Il sito dimostrativo</b>: la stessa app aperta nel browser, con pazienti di esempio e senza account.</li>
-</ul>
-<p>Il codice sta su GitHub: ${_a(GH,'GynoSistem')} (app, funzioni Firebase, sito demo) e ${_a(GH_PORTALE,'Gestione-MED-system')} (portale). Entrambi si pubblicano da soli su GitHub Pages pochi minuti dopo ogni modifica al ramo <code>main</code>.</p>`],
-['🗄️','Archiviazione: dove stanno i dati delle pazienti',`
-<h4>Nell'app per Windows</h4>
-<ul>
-<li>Tutto l'archivio sta in un <b>database interno</b>, un unico file per versione (<code>medsystem-gineco.db</code>, <code>medsystem-proct.db</code>, <code>medsystem-base.db</code>) nella cartella dati dell'app sul PC.</li>
-<li>Il contenuto è <b>cifrato (AES-256)</b>. La chiave è generata dall'app al primo avvio e custodita da Windows (Gestione credenziali dell'account Windows), con una copia di riserva protetta nella cartella dell'app.</li>
-<li>Per questo <b>il file del database copiato su un altro PC non si apre</b>: per spostare i dati si usa sempre un backup completo (vedi sotto).</li>
-<li>L'app salva da sola a ogni modifica. In più tiene delle <b>versioni automatiche</b> dell'archivio (al massimo una all'ora, le ultime 30), ripristinabili dalla sezione Archiviazione dell'app.</li>
-<li>Ogni medico ha il suo archivio, separato per account: due medici sullo stesso PC non vedono i dati l'uno dell'altro.</li>
-<li>Si può impostare un <b>PIN</b> di sblocco: l'app si blocca all'apertura e dopo alcuni minuti di inattività.</li>
-</ul>
-<h4>Nel sito dimostrativo</h4>
-<p>I dati di esempio vivono nel browser di chi apre il sito (IndexedDB) e non vanno da nessuna parte.</p>
-<div class="nota">Se un giorno l'app dice «L'archivio di questo PC non si apre», i dati <b>non</b> sono cancellati: la soluzione consigliata è ripristinare l'ultimo backup completo dalla stessa schermata.</div>`],
-['💾','Backup: come si fanno e come si ripristinano',`
-<h4>Backup automatico cifrato (consigliato)</h4>
-<ol>
-<li>Nell'app: <b>Archiviazione → Backup automatico cifrato</b>.</li>
-<li><b>Scegli la cartella dei backup</b>: meglio una chiavetta, un disco esterno o una cartella sincronizzata (es. Google Drive).</li>
-<li><b>Imposta la password dei backup</b>: senza quella i file non si aprono, quindi va conservata in un posto sicuro.</li>
-</ol>
-<p>Da quel momento l'app salva <b>ogni giorno</b> un backup completo cifrato nella cartella e tiene gli <b>ultimi 30</b>. Se il backup è attivo ma vecchio di più di 2 giorni, la home dell'app lo segnala in rosso.</p>
-<h4>Backup a mano</h4>
-<p>In <b>Archiviazione → Backup completo</b>: «Scarica backup completo (protetto da password)». Il file contiene pazienti, visite, appuntamenti, promemoria, allegati, consensi e impostazioni. C'è anche l'esportazione dei pazienti in CSV (solo anagrafica, per Excel).</p>
-<h4>Ripristino o cambio di PC</h4>
-<ol>
-<li>Installa l'app sul nuovo PC (vedi «Programmi e demo») e accedi con l'account del medico.</li>
-<li><b>Archiviazione → Importa un backup</b>, scegli il file <code>…BackupCompleto….json</code> e inserisci la password dei backup.</li>
-<li>Prima di importare, l'app salva a sua volta una versione dei dati attuali, quindi si può sempre tornare indietro.</li>
-</ol>
-<div class="nota">I backup sono l'unica copia dei dati fuori dal PC: MED System non tiene copie delle pazienti su internet. Controlla con ogni medico che il backup automatico sia attivo.</div>`],
-['👥','Account e licenze',`
-<ul>
-<li><b>Nuovo account</b> (pagina Account): nome, email, password provvisoria, versione dell'app, piano e scadenza. Al primo accesso il medico sceglie una password sua.</li>
-<li><b>Password dimenticata</b>: «Password provvisoria» sull'account; il medico la cambierà al primo accesso.</li>
-<li><b>Blocca</b>: il medico viene scollegato subito e non può più entrare (i suoi dati restano sul suo PC).</li>
-<li><b>Licenze</b>: prova, gratuita, mensile, annuale, a vita. Alla scadenza l'app blocca da sola l'accesso, i dati restano sul PC. Registrando un pagamento (pulsante «Licenza») la scadenza si allunga di un periodo.</li>
-<li><b>Modalità demo</b> (casella «Demo» nella lista account): al prossimo accesso quel medico vede pazienti di esempio, separati dal suo archivio vero. Togliendo la spunta torna ai suoi dati.</li>
-<li>La versione dell'app assegnata nella licenza deve corrispondere a quella installata: un account Gineco non entra in MED System Proct.</li>
-</ul>`],
-['✏️','Testi personalizzati dei medici',`
-<p>Ogni medico ha un «pacchetto» con i suoi testi: frasi pronte e testi standard delle visite, consensi informati, schemi di prescrizione.</p>
-<ul>
-<li><b>Il medico modifica dall'app</b> (Impostazioni → Frasi pronte, Consensi, Schemi): la modifica entra nel suo pacchetto e la vedi in <b>Personalizzazioni</b>, con «✏️ Modificato dal medico». Se in quel momento è senza internet, la modifica parte al primo accesso successivo.</li>
-<li><b>Tu modifichi dal portale</b>: Personalizzazioni → Apri → scegli la sezione, cambia le voci, «Salva pacchetto». Il medico la riceve al prossimo accesso.</li>
-<li>Puoi <b>esportare</b> il pacchetto su file, <b>importarlo</b> da file o <b>copiarlo</b> da un altro medico.</li>
-<li>Ogni salvataggio conserva la versione precedente (<b>ultime 20</b>), con chi l'ha fatto: «Versioni precedenti» → Ripristina.</li>
-<li>«Ripristina le predefinite» su una sezione la riporta ai testi standard del programma.</li>
-</ul>`],
-['💿',"Nuova versione dell'app (.exe)",`
-<ol>
-<li>Le modifiche all'app vanno prima unite nel ramo <code>main</code> di GynoSistem, con il numero di versione aumentato in <code>desktop/src-tauri/tauri.conf.json</code> (es. 1.7.2 → 1.7.3).</li>
-<li>Apri ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop (Windows)')} → <b>Run workflow</b> → ramo <code>main</code> → spunta <b>«Pubblica la release»</b> → <b>Run workflow</b>. (Di solito lo fa Claude per te.)</li>
-<li>In circa 20 minuti GitHub compila i tre installer (Gineco, Proct, Base), crea il tag <code>desktop-v</code> + versione e la release: li trovi in <b>Programmi e demo</b>, pronti da mandare ai medici.</li>
-<li>Senza la spunta «Pubblica» il workflow compila solo gli installer di prova, scaricabili dalla pagina dell'esecuzione (Artifacts).</li>
-</ol>
-<p>Il medico installa il nuovo .exe sopra la versione vecchia: pazienti e impostazioni restano. L'avanzamento della compilazione si vede in ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop')}.</p>`],
-['☁️','Firebase: funzioni e deploy automatico',`
-<p>Le «funzioni» sono i piccoli programmi su Firebase che usano il portale (gestione account) e l'app (salvataggio dei testi del medico, invio email).</p>
-<ul>
-<li>Si pubblicano <b>da sole</b> con il workflow ${_a(GH+'/actions/workflows/firebase.yml','Firebase (deploy)')} ogni volta che cambia il codice in <code>functions/</code> o le regole del database.</li>
-<li>Per rilanciarlo a mano: apri il link, <b>Run workflow</b> → ramo <code>main</code> → <b>Run workflow</b>. Spunta verde = pubblicato.</li>
-<li>Usa il secret di GitHub <code>FIREBASE_SERVICE_ACCOUNT</code>: la chiave dell'account di servizio <code>github-deploy@gynosistem.iam.gserviceaccount.com</code>. Se la chiave viene cancellata, se ne crea una nuova da ${_a(GC+'/iam-admin/serviceaccounts?project=gynosistem','Account di servizio')} (Chiavi → Aggiungi chiave → JSON) e la si incolla al posto del secret.</li>
-<li>Il progetto è sul piano Blaze (a consumo) con quota gratuita: con l'uso attuale il costo atteso è 0 €. Si può impostare un avviso di budget in ${_a(GC+'/billing','Fatturazione')}.</li>
-</ul>`],
-['✉️','Email alle pazienti',`
-<p>La sezione «Email» dell'app (comunicazioni, promemoria degli appuntamenti) invia da <b>un solo indirizzo Gmail per tutti i medici</b>: <code>medsystem.comunicazioni@gmail.com</code> (attivo dal 27/10/2026).</p>
-<ul>
-<li>La paziente vede come mittente il <b>nome del medico</b>. In fondo all'email l'app aggiunge i suoi dati (dall'intestazione delle stampe) e «Per rispondere scrivere a: …» con l'email scelta dal medico in <b>Email → Mittente e risposte</b> (dalla versione 1.7.2; prima, l'email del suo account). «Rispondi» va direttamente al medico.</li>
-<li>Ogni paziente riceve un'email separata: nessuna vede gli indirizzi delle altre.</li>
-<li>L'elenco delle inviate di ogni medico resta sul suo PC; una copia di tutte le email è nella «Posta inviata» della Gmail, dove entri solo tu. Gmail permette circa 500 email al giorno.</li>
-</ul>
-<p>Per cambiare la Gmail o la sua password: crea una nuova ${_a('https://myaccount.google.com/apppasswords','password per le app')}, poi in ${_a(GC+'/security/secret-manager?project=gynosistem','Secret Manager')} aggiungi una «Nuova versione» a <code>EMAIL_USER</code> e/o <code>EMAIL_PASS</code> e rilancia ${_a(GH+'/actions/workflows/firebase.yml','Firebase (deploy)')}.</p>`],
-['🌐','Sito dimostrativo',`
-<ul>
-<li>Indirizzo: ${_a(SITO_DEMO,SITO_DEMO)}. Si apre senza account, con pazienti di esempio.</li>
-<li>Quale versione mostra (Gineco, Proct, Base) si sceglie in <b>Programmi e demo → Sito dimostrativo</b>.</li>
-<li>Ogni visitatore lavora su una copia nel proprio browser: niente di quello che fa arriva a te o agli altri.</li>
-<li>Per far provare l'app vera a un medico con dati finti, usa invece la <b>modalità demo</b> sul suo account (pagina Account, casella «Demo»).</li>
-</ul>`],
-];
-  $('guida').className='guida';
-  $('guida').innerHTML=sez.map(([ic,t,c],i)=>`<details${i===0?' open':''}><summary><span>${ic}</span>${t}</summary><div class="corpo">${c}</div></details>`).join('');
-}
-
-// ── Download programmi: installer dell'ultima release pubblicata dell'app ──
-const RELEASE_URL='https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest';
-async function caricaDownload(){
-  const box=$('download-lista');
-  try{
-    const r=await fetch(RELEASE_URL);
-    if(r.status===404){ box.textContent='Nessuna versione pubblicata per ora.'; return; }
-    if(!r.ok) throw new Error('GitHub non raggiungibile ('+r.status+')');
-    const rel=await r.json();
-    const exe=(rel.assets||[]).filter(a=>/\.exe$/i.test(a.name));
-    if(!exe.length){ box.textContent='L\'ultima versione pubblicata non contiene installer.'; return; }
-    const nomeVersione=n=>/proct/i.test(n)?'MED System Proct':/gineco/i.test(n)?'MED System Gineco':'MED System (base, tutte le specialità)';
-    const ordine=n=>/gineco/i.test(n)?0:/proct/i.test(n)?1:2;
-    box.innerHTML=`<div style="margin-bottom:8px">Versione <strong>${esc((rel.tag_name||'').replace(/^desktop-v/,''))}</strong> · pubblicata ${esc(dataBreve(rel.published_at))}</div>`+
-      exe.sort((a,b)=>ordine(a.name)-ordine(b.name)).map(a=>`<div class="pag"><span style="flex:1">${esc(nomeVersione(a.name))}<span class="sub" style="margin-left:6px">${esc(a.name)} · ${(a.size/1048576).toFixed(1)} MB</span></span><a class="btn btn-primary btn-sm" href="${esc(a.browser_download_url)}">⬇ Scarica</a></div>`).join('');
-  }catch(e){ box.textContent='⚠️ '+(e.message||e); }
-}
 
 async function caricaUtenti(){
   $('lista').innerHTML='<tr><td colspan="7" class="vuoto">Caricamento…</td></tr>';
@@ -1050,10 +724,6 @@ async function caricaUtenti(){
       .sort((a,b)=>(b.amministratore-a.amministratore)||a.nome.localeCompare(b.nome));
     disegna();
     disegnaScadenze();
-    disegnaDashboard();
-    disegnaPersonalizzazioni();
-    disegnaVersioni();
-    caricaUltimaVersione().then(()=>{ if(_ultimaVersione){ disegna(); disegnaVersioni(); } });
   }catch(e){
     $('lista').innerHTML=`<tr><td colspan="7" class="vuoto">⚠️ ${esc(errore(e))}</td></tr>`;
   }
@@ -1073,18 +743,14 @@ function disegna(){
     if(!u.autorizzato && !u.amministratore) stato.push('<span class="badge b-warn">Non abilitato all\'app</span>');
     stato.push(u.bloccato?'<span class="badge b-ko">Bloccato</span>':'<span class="badge b-ok">Attivo</span>');
     if(u.passwordProvvisoria) stato.push('<span class="badge b-warn">Password provvisoria</span>');
-    if(u.pacchetto){
-      const dalMedico=u.pacchetto.da && u.pacchetto.da!==ADMIN_EMAIL;
-      stato.push(`<span class="badge b-info" title="Personalizzazione: ultimo salvataggio ${esc(dataBreve(u.pacchetto.aggiornato))}${dalMedico?' (dal medico)':''}">📦 ${esc(u.pacchetto.nome||'Personalizzato')}</span>`);
-      if(dalMedico) stato.push(`<span class="badge b-warn" title="Il medico ha modificato i suoi testi dall'app: li trovi in Personalizzazione">✏️ Modificato dal medico ${esc(dataBreve(u.pacchetto.aggiornato))}</span>`);
-    }
+    if(u.pacchetto) stato.push(`<span class="badge b-info" title="Pacchetto studio">📦 ${esc(u.pacchetto.nome||'Pacchetto')}</span>`);
     const io=u.amministratore;
     const id=esc(u.uid);
     return `<tr>
       <td><div class="nome">${esc(u.nome||'—')}</div><div class="email">${esc(u.email)}</div></td>
       <td>${stato.join('')}</td>
       <td class="lic">${cellaLicenza(u)}</td>
-      <td class="nascondi-mobile" style="color:var(--label3);font-size:.82rem">${dataBreve(u.ultimoAccesso)}${u.amministratore?'':cellaVersione(u)}</td>
+      <td class="nascondi-mobile" style="color:var(--label3);font-size:.82rem">${dataBreve(u.ultimoAccesso)}</td>
       <td><select onchange="aggiorna('${id}',{genere:this.value})">
         <option value="f" ${u.genere==='f'?'selected':''}>Femminile</option>
         <option value="m" ${u.genere==='m'?'selected':''}>Maschile</option>
