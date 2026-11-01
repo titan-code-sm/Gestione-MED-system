@@ -371,6 +371,17 @@ a.btn{text-decoration:none}
       </div>
       <div class="msg" id="demo-msg"></div>
     </div>
+    <div class="card">
+      <h2>Download del programma dal sito</h2>
+      <div class="sub">Sul sito demo c'è il pulsante «⬇ Scarica il programma»: chi ha questa password scarica l'ultima versione pubblicata (Gineco, Proct o Base). Generane una e dalla a chi vuole installare MED System. Una sola password è valida alla volta: generarne una nuova annulla la precedente.</div>
+      <div id="dl-stato" class="piccolo" style="margin:10px 0">Caricamento…</div>
+      <div class="riga" style="align-items:flex-end;max-width:560px">
+        <div><label for="dl-scadenza">Scadenza (facoltativa)</label><input id="dl-scadenza" type="date"></div>
+        <button class="btn btn-primary" onclick="generaPasswordDownload()">🔑 Genera nuova password</button>
+        <button class="btn btn-ghost" id="dl-disattiva" style="display:none" onclick="disattivaPasswordDownload()">Disattiva</button>
+      </div>
+      <div class="msg" id="dl-msg"></div>
+    </div>
   </section>
 
   <!-- GUIDA -->
@@ -568,6 +579,29 @@ async function caricaModelloDemo(){
 async function salvaModelloDemo(){
   try{ await portale({azione:'modelloDemo', modello:$('demo-modello').value}); msg($('demo-msg'),'✅ Modello del sito aggiornato.',true); }
   catch(e){ msg($('demo-msg'),errore(e)); }
+}
+// ── Password di download del sito demo ──
+function disegnaPasswordDownload(st){
+  const box=$('dl-stato');
+  $('dl-disattiva').style.display=st.attiva?'':'none';
+  if(!st.attiva){ box.innerHTML='Nessuna password attiva: dal sito demo per ora non si può scaricare il programma.'; return; }
+  box.innerHTML=`Password attiva: <b style="font-family:Consolas,monospace;font-size:1.15rem;letter-spacing:1px">${esc(st.password)}</b> <button class="btn btn-ghost btn-sm" onclick="copiaLink('${esc(st.password)}',this)">📋 Copia</button>`+
+    `<div style="margin-top:6px">Creata ${esc(dataBreve(st.creata))} · ${st.scadenza?(st.scaduta?'<span class="badge b-ko">Scaduta</span> il ':'valida fino al ')+esc(new Date(st.scadenza+'T12:00').toLocaleDateString('it-IT')):'senza scadenza'} · usata ${st.download} ${st.download===1?'volta':'volte'}${st.ultimoDownload?' (ultima '+esc(dataBreve(st.ultimoDownload))+')':''}</div>`;
+}
+async function caricaPasswordDownload(){
+  try{ disegnaPasswordDownload((await portale({azione:'leggiPasswordDownload'})).data); }
+  catch(e){ $('dl-stato').textContent='⚠️ '+errore(e); }
+}
+async function generaPasswordDownload(){
+  try{
+    const st=(await portale({azione:'generaPasswordDownload', scadenza:$('dl-scadenza').value})).data;
+    disegnaPasswordDownload(st); msg($('dl-msg'),'✅ Nuova password generata: la precedente non vale più.',true);
+  }catch(e){ msg($('dl-msg'),errore(e)); }
+}
+async function disattivaPasswordDownload(){
+  if(!confirm('Disattivare la password? Dal sito demo non si potrà più scaricare il programma finché non ne generi una nuova.')) return;
+  try{ disegnaPasswordDownload((await portale({azione:'disattivaPasswordDownload'})).data); msg($('dl-msg'),'Password disattivata.',true); }
+  catch(e){ msg($('dl-msg'),errore(e)); }
 }
 const $=id=>document.getElementById(id);
 
@@ -999,7 +1033,7 @@ auth.onAuthStateChanged(async user=>{
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
   $('l-pass').value='';
-  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); caricaDownload(); disegnaGuida(); disegnaLink(); vai((location.hash||'').slice(1)||'dashboard'); }
+  if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); caricaPasswordDownload(); caricaDownload(); disegnaGuida(); disegnaLink(); vai((location.hash||'').slice(1)||'dashboard'); }
 });
 
 // ── Navigazione: una pagina per categoria (il nome resta nell'indirizzo) ──
@@ -1170,6 +1204,7 @@ function disegnaGuida(){
 <ul>
 <li>Indirizzo: ${_a(SITO_DEMO,SITO_DEMO)}. Si apre senza account, con pazienti di esempio.</li>
 <li>Quale versione mostra (Gineco, Proct, Base) si sceglie in <b>Sito demo</b>.</li>
+<li>Dal sito si può anche <b>scaricare il programma</b> (ultima versione), ma solo con la password che generi in <b>Sito demo → Download del programma</b>.</li>
 <li>Ogni visitatore lavora su una copia nel proprio browser: niente di quello che fa arriva a te o agli altri.</li>
 <li>Per far provare l'app vera a un medico con dati finti, usa invece la <b>modalità demo</b> sul suo account (pagina Account, casella «Demo»).</li>
 </ul>`],
