@@ -177,10 +177,10 @@ function piuRecente(...date) {
 // è grande. L'email contiene il link all'ultima release pubblicata su GitHub,
 // scelta in base alla versione dell'app (modello) dell'account.
 // Le release si pubblicano in Gestione-MED-system; quelle fino alla 1.7.x
-// stanno ancora in GynoSistem: si usa la prima che contiene installer.
+// stanno ancora in Med-System-DEMO (ex GynoSistem): si usa la prima che contiene installer.
 const RELEASE_API = [
   "https://api.github.com/repos/titan-code-sm/Gestione-MED-system/releases/latest",
-  "https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest",
+  "https://api.github.com/repos/titan-code-sm/Med-System-DEMO/releases/latest",
 ];
 const NOMI_MODELLO = { gineco: "MED System Gineco", proct: "MED System Proct", base: "MED System" };
 function modelloDelFile(nome) { return /proct/i.test(nome) ? "proct" : /gineco/i.test(nome) ? "gineco" : "base"; }
