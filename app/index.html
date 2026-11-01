@@ -2272,7 +2272,7 @@ input.ob-settimane-big{font-size:1.5rem;font-weight:800;font-family:var(--font-s
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn btn-ghost" onclick="closeModal('modal-benvenuto')">Più tardi</button>
+      <button class="btn btn-ghost" onclick="rimandaBenvenuto()">Più tardi</button>
       <button class="btn btn-primary" onclick="salvaBenvenuto()">Salva e inizia</button>
     </div>
   </div>
@@ -7153,6 +7153,14 @@ async function bvCaricaLogo(input){
   input.value='';
 }
 function bvRimuoviLogo(){ _bvLogo=''; _bvDisegna(); }
+// «Più tardi»: la scelta si ricorda, così la schermata non si riapre a ogni
+// avvio (prima tornava dopo ogni riavvio, per esempio dopo un aggiornamento).
+// Si completa quando si vuole da Impostazioni → Profilo.
+function rimandaBenvenuto(){
+  try{ localStorage.setItem(_bvChiave(), 'rimandato '+new Date().toISOString()); }catch(e){}
+  closeModal('modal-benvenuto');
+  if(typeof gsToast==='function') gsToast('Puoi completare la configurazione quando vuoi da Impostazioni → Profilo','gs-info');
+}
 async function salvaBenvenuto(){
   if(!haPin()){
     const p1=document.getElementById('bv-pin').value, p2=document.getElementById('bv-pin2').value;
