@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "MED System Gineco",
-  "version": "1.7.12",
+  "version": "1.8.0",
   "identifier": "it.medsystem.gineco",
   "build": {
     "frontendDist": "../app"
@@ -47,6 +47,18 @@
         "languages": [
           "Italian"
         ]
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGOEQwMDM1MzkwNjYxODMKUldTRFlRWTVOUUNOei9EWlNORU1OdElRMTNwRmUxTXVGMHlLa0lhcEYzZHhadktTVDF4bW92NkEK",
+      "endpoints": [
+        "https://github.com/titan-code-sm/Gestione-MED-system/releases/latest/download/latest-gineco.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

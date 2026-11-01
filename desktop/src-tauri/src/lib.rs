@@ -233,12 +233,50 @@ fn percent_decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+// ── Aggiornamento dell'app richiesto dal portale ──
+// L'amministratore preme «Aggiorna» nel portale; l'app lo vede nel profilo del
+// medico e chiama questi due comandi:
+//  1. aggiornamento_scarica: guarda l'ultima release di Gestione-MED-system
+//     (file latest-<modello>.json) e, se è più recente, scarica l'installer
+//     in sottofondo, senza disturbare il medico. None = già aggiornata.
+//  2. aggiornamento_installa: quando il medico conferma, installa e riapre
+//     l'app. L'installer è verificato con la chiave pubblica di
+//     tauri.conf.json: l'app accetta solo versioni firmate da MED System.
+// I dati dello studio (cartella %APPDATA%) non vengono toccati.
+#[derive(Default)]
+struct AggiornamentoPronto(std::sync::Mutex<Option<(tauri_plugin_updater::Update, Vec<u8>)>>);
+
+#[derive(serde::Serialize)]
+struct InfoAggiornamento { versione: String, attuale: String }
+
+#[tauri::command]
+async fn aggiornamento_scarica(app: tauri::AppHandle) -> Result<Option<InfoAggiornamento>, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let Some(agg) = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())? else {
+        return Ok(None);
+    };
+    let dati = agg.download(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+    let info = InfoAggiornamento { versione: agg.version.clone(), attuale: agg.current_version.clone() };
+    *app.state::<AggiornamentoPronto>().0.lock().map_err(|e| e.to_string())? = Some((agg, dati));
+    Ok(Some(info))
+}
+
+#[tauri::command]
+fn aggiornamento_installa(app: tauri::AppHandle) -> Result<(), String> {
+    let pronto = app.state::<AggiornamentoPronto>().0.lock().map_err(|e| e.to_string())?.take();
+    let Some((agg, dati)) = pronto else { return Err("nessun aggiornamento scaricato".into()) };
+    agg.install(dati).map_err(|e| e.to_string())?;
+    app.restart();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(AggiornamentoPronto::default())
         // Versione nel titolo della finestra: «MED System Gineco · v1.7.8»
         .setup(|app| {
             if let Some(finestra) = app.get_webview_window("main") {
@@ -249,7 +287,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             chiave_db_leggi, chiave_db_salva, segreto_leggi, segreto_salva,
-            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva
+            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva,
+            aggiornamento_scarica, aggiornamento_installa
         ])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio di MED System");

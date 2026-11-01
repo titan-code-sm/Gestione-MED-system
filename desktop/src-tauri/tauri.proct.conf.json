@@ -18,5 +18,12 @@
   "bundle": {
     "publisher": "MED System",
     "shortDescription": "MED System Proct — gestione dello studio proctologico"
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/titan-code-sm/Gestione-MED-system/releases/latest/download/latest-proct.json"
+      ]
+    }
   }
 }
