@@ -339,7 +339,7 @@ a.btn{text-decoration:none}
     <div class="pag-h"><div><h1>Programmi</h1><div class="sub">Gli installer per Windows dell'ultima versione pubblicata, da scaricare o da mandare per email ai medici.</div></div></div>
     <div class="g2c">
       <div class="card">
-        <div class="card-h"><h2>Ultima versione</h2><a class="btn btn-ghost btn-sm" href="https://github.com/titan-code-sm/GynoSistem/actions/workflows/desktop.yml" target="_blank" rel="noopener">Pubblica una nuova ↗</a></div>
+        <div class="card-h"><h2>Ultima versione</h2><a class="btn btn-ghost btn-sm" href="https://github.com/titan-code-sm/Gestione-MED-system/actions/workflows/desktop.yml" target="_blank" rel="noopener">Pubblica una nuova ↗</a></div>
         <div id="download-lista" class="sub" style="margin:0">Caricamento…</div>
       </div>
       <div class="card">
@@ -661,9 +661,27 @@ function cellaLicenza(u){
 // ── Versione dell'app di ogni medico ──
 // L'app (dalla 1.7.4) scrive la sua versione nel profilo a ogni apertura; qui
 // la si confronta con l'ultima pubblicata, per sapere chi deve aggiornare.
+// Le release (.exe) si pubblicano in Gestione-MED-system; quelle fino alla
+// 1.7.x stanno ancora in GynoSistem: si usa la prima che ha degli installer.
+const RELEASE_URLS=['https://api.github.com/repos/titan-code-sm/Gestione-MED-system/releases/latest',
+  'https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest'];
+async function ultimaRelease(){
+  let errore=null;
+  for(const u of RELEASE_URLS){
+    try{
+      const r=await fetch(u);
+      if(r.status===404) continue;
+      if(!r.ok) throw new Error('GitHub non raggiungibile ('+r.status+')');
+      const rel=await r.json();
+      if((rel.assets||[]).some(a=>/\.exe$/i.test(a.name))) return rel;
+    }catch(e){ errore=errore||e; }
+  }
+  if(errore) throw errore;
+  return null;
+}
 let _ultimaVersione='', _ultimaVersioneP=null;
 function caricaUltimaVersione(){
-  if(!_ultimaVersioneP) _ultimaVersioneP=fetch(RELEASE_URL).then(r=>r.ok?r.json():null)
+  if(!_ultimaVersioneP) _ultimaVersioneP=ultimaRelease()
     .then(rel=>{ _ultimaVersione=rel ? String(rel.tag_name||'').replace(/^desktop-v/,'') : ''; })
     .catch(()=>{ _ultimaVersioneP=null; });
   return _ultimaVersioneP;
@@ -719,7 +737,7 @@ function disegnaScadenze(){
 // Il catalogo con i testi predefiniti di ogni versione è pubblicato insieme
 // all'app (catalogo-pacchetti.json). Il pacchetto contiene solo testi: frasi
 // pronte e testi standard (sezioni), consensi, schemi di prescrizione.
-const CATALOGO_URL=window.CATALOGO_URL||'https://titan-code-sm.github.io/GynoSistem/catalogo-pacchetti.json';
+const CATALOGO_URL=window.CATALOGO_URL||'catalogo-pacchetti.json';
 let _catalogo=null, _pacUid=null, _pac=null, _pacModificato=false, _pacVersioni=[];
 async function _caricaCatalogo(){
   if(_catalogo) return _catalogo;
@@ -766,7 +784,7 @@ async function apriPacchetto(uid){
   $('m-pac-msg').textContent=''; $('pac-sez').innerHTML=''; $('pac-indice').innerHTML=''; $('pac-sez-box').style.display='none'; $('pac-schede').innerHTML='<div class="vuoto">Caricamento…</div>';
   $('m-pac').classList.add('show');
   try{
-    await _caricaCatalogo();
+    await Promise.all([_caricaCatalogo(), _pacCaricaInAttesa()]);
     const r=(await portale({azione:'leggiPacchetto', uid})).data;
     _pac=r.pacchetto ? {nome:r.pacchetto.nome||'', sezioni:r.pacchetto.sezioni||{}, ...(r.pacchetto.consensi?{consensi:r.pacchetto.consensi}:{}), ...(r.pacchetto.schemi?{schemi:r.pacchetto.schemi}:{})} : {nome:'', sezioni:{}};
     _pacVersioni=r.versioni||[];
@@ -817,13 +835,52 @@ function _pacDisegna(){
       <input value="${esc(r.titolo)}" placeholder="${segnapostoTitolo}" oninput="_pacRigheAttuali[${i}].titolo=this.value;pacAggiorna()">
       ${soloTitolo?'':`<textarea rows="${Math.min(8,Math.max(2,Math.ceil((r.testo||'').length/90)))}" placeholder="Testo inserito nella scheda" oninput="_pacRigheAttuali[${i}].testo=this.value;pacAggiorna()">${esc(r.testo)}</textarea>`}
       <div style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm" title="Sposta su" onclick="pacSposta(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="btn btn-ghost btn-sm" title="Sposta giù" onclick="pacSposta(${i},1)" ${i===righe.length-1?'disabled':''}>↓</button><button class="btn btn-danger btn-sm" title="Elimina" onclick="pacElimina(${i})">✕</button></div>
-    </div>${r.pdf?`<div class="sub" style="margin:-4px 0 6px">📎 PDF allegato: ${esc(r.pdf)}</div>`:''}`).join(''):'<div class="sub" style="padding:10px 0">Nessuna voce: aggiungine una.</div>'}
+    </div>${s.tipo==='consensi'?_pacRigaPdf(r,i):''}`).join(''):'<div class="sub" style="padding:10px 0">Nessuna voce: aggiungine una.</div>'}
     <div class="riga" style="margin-top:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="pacAggiungi()">+ Aggiungi una voce</button><span style="flex:1"></span>${nel?`<button class="btn btn-ghost btn-sm" onclick="pacTogli('${s.id}')" title="Il medico userà i testi predefiniti per questa sezione">Ripristina le predefinite</button>`:''}</div>
     <div class="pac-anteprima" id="pac-anteprima"></div>
   </div>`;
   _pacAnteprima();
   $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':'';
 }
+// ── PDF allegati ai consensi ──
+// «Allega PDF» manda il file alla funzione, che lo tiene in attesa: il
+// workflow «PDF dal portale» lo mette nel repository (app/consensi-pdf/) entro
+// circa 15 minuti. Il consenso riceve subito il link definitivo.
+const URL_APP='https://titan-code-sm.github.io/Gestione-MED-system/app/';
+let _pdfInAttesa=new Set(), _pdfInAttesaCaricati=false;
+function _pdfUrl(pdf){ return /^https?:/i.test(pdf) ? pdf : URL_APP+pdf; }
+function _pdfNome(pdf){ return decodeURIComponent(String(pdf).split('/').pop()); }
+function _pacRigaPdf(r,i){
+  const attesa=r.pdf && _pdfInAttesa.has(_pdfNome(r.pdf));
+  return `<div class="riga" style="margin:-4px 0 8px;gap:6px;flex-wrap:wrap;font-size:.85rem">
+    ${r.pdf?`<span class="sub">📎 PDF allegato: <a href="${esc(_pdfUrl(r.pdf))}" target="_blank" rel="noopener">${esc(_pdfNome(r.pdf))}</a>${attesa?' · <span class="badge b-warn" title="Il file è in arrivo nel repository: il link funziona entro circa 15 minuti">In pubblicazione</span>':''}</span>`:'<span class="sub">Nessun PDF allegato</span>'}
+    <button class="btn btn-ghost btn-sm" onclick="pacScegliPdf(${i})">${r.pdf?'Sostituisci PDF':'📎 Allega PDF'}</button>
+    ${r.pdf?`<button class="btn btn-ghost btn-sm" onclick="pacTogliPdf(${i})">Togli PDF</button>`:''}
+  </div>`;
+}
+async function _pacCaricaInAttesa(){
+  if(_pdfInAttesaCaricati) return;
+  try{ const r=(await portale({azione:'pdfInAttesa'})).data; _pdfInAttesa=new Set((r.file||[]).map(x=>x.file)); _pdfInAttesaCaricati=true; }catch(e){}
+}
+function pacScegliPdf(i){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,.pdf';
+  inp.onchange=()=>{ if(inp.files[0]) pacAllegaPdf(i, inp.files[0]); };
+  inp.click();
+}
+async function pacAllegaPdf(i, file){
+  const riga=window._pacRigheAttuali[i]; if(!riga) return;
+  if(file.size>5*1024*1024){ msg($('m-pac-msg'),'Il PDF deve pesare al massimo 5 MB.'); return; }
+  $('pac-stato').textContent='Caricamento del PDF…';
+  try{
+    const dati=await new Promise((ok,ko)=>{ const fr=new FileReader(); fr.onload=()=>ok(String(fr.result).split(',')[1]||''); fr.onerror=()=>ko(fr.error); fr.readAsDataURL(file); });
+    const base=(riga.titolo||'').trim() || file.name;
+    const r=(await portale({azione:'caricaPdf', nome:base, dati})).data;
+    riga.pdf=r.url; _pdfInAttesa.add(r.file);
+    _pacSalvaRighe(); _pacDisegna();
+    msg($('m-pac-msg'),`PDF «${r.file}» caricato. Salva il pacchetto: il medico lo vedrà al prossimo accesso. Il file sarà online entro circa 15 minuti.`, true);
+  }catch(e){ msg($('m-pac-msg'), errore(e)); $('pac-stato').textContent=_pacModificato?'Modifiche non salvate':''; }
+}
+function pacTogliPdf(i){ const riga=window._pacRigheAttuali[i]; if(!riga) return; riga.pdf=''; _pacSalvaRighe(); _pacDisegna(); }
 // Anteprima di come il medico vedrà la sezione nella scheda visita:
 // pulsanti per frasi ed elenchi, tendina per testi standard e opzioni.
 function _pacAnteprima(){
@@ -1086,7 +1143,7 @@ function disegnaPersonalizzazioni(){
 }
 
 // ── Collegamenti e guida ──
-const GH='https://github.com/titan-code-sm/GynoSistem', GH_PORTALE='https://github.com/titan-code-sm/Gestione-MED-system';
+const GH='https://github.com/titan-code-sm/Gestione-MED-system', GH_DEMO='https://github.com/titan-code-sm/GynoSistem';
 const FB='https://console.firebase.google.com/project/gynosistem', GC='https://console.cloud.google.com';
 const SITO_DEMO='https://titan-code-sm.github.io/GynoSistem/';
 const _a=(url,testo)=>`<a href="${url}" target="_blank" rel="noopener">${testo} ↗</a>`;
@@ -1108,8 +1165,8 @@ function disegnaGuida(){
 <table><tbody>
 <tr><td><b>Portale (questa pagina)</b></td><td>${_a(portaleUrl,portaleUrl)}</td></tr>
 <tr><td><b>Sito dimostrativo</b></td><td>${_a(SITO_DEMO,SITO_DEMO)}</td></tr>
-<tr><td><b>Codice dell'app</b></td><td>${_a(GH,'GitHub · GynoSistem')}</td></tr>
-<tr><td><b>Codice del portale</b></td><td>${_a(GH_PORTALE,'GitHub · Gestione-MED-system')}</td></tr>
+<tr><td><b>Codice di app, portale e funzioni</b></td><td>${_a(GH,'GitHub · Gestione-MED-system')}</td></tr>
+<tr><td><b>Codice del sito demo</b></td><td>${_a(GH_DEMO,'GitHub · GynoSistem')}</td></tr>
 <tr><td><b>Versioni pubblicate (.exe)</b></td><td>${_a(GH+'/releases','Releases')}</td></tr>
 <tr><td><b>Pubblicare una versione</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','App desktop → Run workflow → «Pubblica la release»')}</td></tr>
 <tr><td><b>Compilazione .exe</b></td><td>${_a(GH+'/actions/workflows/desktop.yml','Workflow «App desktop (Windows)»')}</td></tr>
@@ -1127,7 +1184,7 @@ function disegnaGuida(){
 <li><b>Questo portale</b>: da qui gestisci account, licenze, testi dei medici, download e sito demo. Lo può usare solo ${esc(ADMIN_EMAIL)}.</li>
 <li><b>Il sito dimostrativo</b>: la stessa app aperta nel browser, con pazienti di esempio e senza account.</li>
 </ul>
-<p>Il codice sta su GitHub: ${_a(GH,'GynoSistem')} (app, funzioni Firebase, sito demo) e ${_a(GH_PORTALE,'Gestione-MED-system')} (portale). Entrambi si pubblicano da soli su GitHub Pages pochi minuti dopo ogni modifica al ramo <code>main</code>.</p>`],
+<p>Tutto il codice sta su GitHub in ${_a(GH,'Gestione-MED-system')}: il portale (pagina principale), l'app (cartella <code>app/</code>, con i PDF dei consensi in <code>app/consensi-pdf/</code>), le funzioni Firebase, la compilazione dei .exe e le release. ${_a(GH_DEMO,'GynoSistem')} contiene solo il sito demo: ogni ora (o a mano, con il workflow «Aggiorna la demo») copia da qui l'app e i PDF, e si pubblica da solo su GitHub Pages.</p>`],
 ['🗄️','Archiviazione: dove stanno i dati delle pazienti',`
 <h4>Nell'app per Windows</h4>
 <ul>
@@ -1178,7 +1235,7 @@ function disegnaGuida(){
 </ul>`],
 ['💿',"Nuova versione dell'app (.exe)",`
 <ol>
-<li>Le modifiche all'app vanno prima unite nel ramo <code>main</code> di GynoSistem, con il numero di versione aumentato in <code>desktop/src-tauri/tauri.conf.json</code> (es. 1.7.2 → 1.7.3).</li>
+<li>Le modifiche all'app (cartella <code>app/</code>) vanno prima unite nel ramo <code>main</code> di Gestione-MED-system, con il numero di versione aumentato in <code>desktop/src-tauri/tauri.conf.json</code> (es. 1.7.2 → 1.7.3).</li>
 <li>Apri ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop (Windows)')} → <b>Run workflow</b> → ramo <code>main</code> → spunta <b>«Pubblica la release»</b> → <b>Run workflow</b>. (Di solito lo fa Claude per te.)</li>
 <li>In circa 20 minuti GitHub compila i tre installer (Gineco, Proct, Base), crea il tag <code>desktop-v</code> + versione e la release: li trovi in <b>Programmi</b>, pronti da scaricare o da inviare per email ai medici.</li>
 <li>Senza la spunta «Pubblica» il workflow compila solo gli installer di prova, scaricabili dalla pagina dell'esecuzione (Artifacts).</li>
@@ -1215,14 +1272,11 @@ function disegnaGuida(){
 
 // ── Download programmi: installer dell'ultima release pubblicata dell'app ──
 let _release=null;
-const RELEASE_URL='https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest';
 async function caricaDownload(){
   const box=$('download-lista');
   try{
-    const r=await fetch(RELEASE_URL);
-    if(r.status===404){ box.textContent='Nessuna versione pubblicata per ora.'; return; }
-    if(!r.ok) throw new Error('GitHub non raggiungibile ('+r.status+')');
-    const rel=await r.json();
+    const rel=await ultimaRelease();
+    if(!rel){ box.textContent='Nessuna versione pubblicata per ora.'; return; }
     _release=rel;
     const exe=(rel.assets||[]).filter(a=>/\.exe$/i.test(a.name));
     if(!exe.length){ box.textContent='L\'ultima versione pubblicata non contiene installer.'; return; }

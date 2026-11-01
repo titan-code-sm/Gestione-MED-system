@@ -1,0 +1,70 @@
+# Pubblica nel repository i PDF dei consensi caricati dal portale
+# (Personalizzazioni → Consensi informati → «Allega PDF»). Il portale li lascia
+# in Firestore (pdfInAttesa); qui finiscono in app/consensi-pdf/ sul ramo main
+# e GitHub Pages li pubblica. Parte ogni 15 minuti o a mano (Run workflow).
+# Usa lo stesso secret del deploy: FIREBASE_SERVICE_ACCOUNT.
+name: PDF dal portale
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pdf-dal-portale
+  cancel-in-progress: false
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Controlla la chiave
+        id: chiave
+        env:
+          CHIAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$CHIAVE" ]; then
+            echo "::warning::Manca il secret FIREBASE_SERVICE_ACCOUNT: i PDF caricati dal portale non vengono pubblicati."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.chiave.outputs.ok == 'true'
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        if: steps.chiave.outputs.ok == 'true'
+        with:
+          node-version: 22
+
+      - name: Dipendenze
+        if: steps.chiave.outputs.ok == 'true'
+        run: npm ci || npm install
+        working-directory: functions
+
+      - uses: google-github-actions/auth@v2
+        if: steps.chiave.outputs.ok == 'true'
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Scarica i PDF in attesa
+        if: steps.chiave.outputs.ok == 'true'
+        run: NODE_PATH=functions/node_modules node scripts/pdf-dal-portale.cjs scarica
+
+      - name: Pubblica nel repository
+        if: steps.chiave.outputs.ok == 'true'
+        run: |
+          git add app/consensi-pdf
+          if git diff --cached --quiet; then echo "Niente di nuovo."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898289+github-actions[bot]@users.noreply.github.com"
+          git commit -m "PDF dei consensi caricati dal portale"
+          git push origin HEAD:main
+
+      - name: Togli da Firestore i PDF pubblicati
+        if: steps.chiave.outputs.ok == 'true'
+        run: NODE_PATH=functions/node_modules node scripts/pdf-dal-portale.cjs pulisci
