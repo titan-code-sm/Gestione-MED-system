@@ -14,7 +14,8 @@ service cloud.firestore {
     // - ognuno legge solo il proprio profilo; l'amministratore li legge tutti
     // - nessuno può crearsi un profilo da solo: senza profilo l'app nega
     //   l'accesso, quindi entra solo chi è stato creato dal portale
-    // - ognuno aggiorna solo campi innocui del proprio profilo (mai 'attivo')
+    // - ognuno aggiorna solo campi innocui del proprio profilo (mai 'attivo');
+    //   'aggiornamentoEsito' è la risposta dell'app a «Aggiorna» del portale
     match /utenti/{uid} {
       allow read: if request.auth != null
         && (request.auth.uid == uid || request.auth.token.email == 'titancodesm@gmail.com');
@@ -22,7 +23,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && (request.auth.token.email == 'titancodesm@gmail.com'
             || (request.auth.uid == uid
-                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimoAccesso','versioneApp','mustChangePassword','genere','tema','sezioniPersonalizzate'])));
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ultimoAccesso','versioneApp','mustChangePassword','genere','tema','sezioniPersonalizzate','aggiornamentoEsito'])));
       allow delete: if request.auth != null && request.auth.token.email == 'titancodesm@gmail.com';
     }
 

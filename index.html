@@ -692,17 +692,62 @@ function confrontaVersioni(a,b){
   return 0;
 }
 function daAggiornare(u){ return !u.amministratore && !!u.versioneApp && !!_ultimaVersione && confrontaVersioni(u.versioneApp,_ultimaVersione)<0; }
+// Aggiornamento dal portale: dalla 1.8.0 l'app si aggiorna da sola quando qui si
+// preme «Aggiorna» (scarica l'ultima versione pubblicata, il medico conferma il
+// riavvio). Le versioni precedenti vanno sostituite a mano una volta (📧 Programma).
+const VERSIONE_AGG_REMOTO='1.8.0';
+function aggiornabileDaPortale(u){ return !!u.versioneApp && confrontaVersioni(u.versioneApp,VERSIONE_AGG_REMOTO)>=0; }
+function aggiornamentoInCorso(u){
+  const r=u.aggiornamentoRichiesto;
+  return !!(r && r.versione && u.versioneApp && confrontaVersioni(u.versioneApp,r.versione)<0);
+}
+function testoAggiornamento(u){
+  const r=u.aggiornamentoRichiesto, e=u.aggiornamentoEsito;
+  const es=e && e.richiesta===r.quando ? e : null;
+  if(!es) return {cls:'b-info', t:`⏳ Aggiornamento a ${r.versione} inviato: parte quando il medico apre l'app`, tit:'Richiesto il '+dataBreve(r.quando)};
+  if(es.stato==='scarico') return {cls:'b-info', t:'⬇️ Sta scaricando l\'aggiornamento', tit:dataBreve(es.quando)};
+  if(es.stato==='pronto') return {cls:'b-info', t:`⏳ Versione ${es.versione||r.versione} scaricata: aspetta che il medico prema «Aggiorna ora»`, tit:dataBreve(es.quando)};
+  return {cls:'b-ko', t:'⚠️ Aggiornamento non riuscito', tit:(es.messaggio||'')+' · '+dataBreve(es.quando)+' · riprova da solo alla prossima apertura dell\'app'};
+}
 function cellaVersione(u){
   if(!u.versioneApp) return '<span class="ver" style="color:var(--label4)" title="Le app precedenti alla 1.7.4 non comunicano la versione">versione non nota</span>';
-  if(daAggiornare(u)) return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">App ${esc(u.versioneApp)} · da aggiornare</span></span>`;
+  const id=esc(u.uid);
+  if(aggiornamentoInCorso(u)){
+    const a=testoAggiornamento(u);
+    return `<span class="ver"><span class="badge b-warn">App ${esc(u.versioneApp)}</span> <span class="badge ${a.cls}" title="${esc(a.tit)}">${esc(a.t)}</span> <button class="btn btn-ghost btn-sm" onclick="annullaAggiornamento('${id}')" title="Ritira la richiesta di aggiornamento">Annulla</button>${a.cls==='b-ko'?` <button class="btn btn-ghost btn-sm" onclick="aggiornaApp(['${id}'])">Riprova</button>`:''}</span>`;
+  }
+  if(daAggiornare(u)){
+    const btn=aggiornabileDaPortale(u)
+      ? ` <button class="btn btn-primary btn-sm" onclick="aggiornaApp(['${id}'])" title="L'app del medico scarica la ${esc(_ultimaVersione)} e si aggiorna">⬆️ Aggiorna a ${esc(_ultimaVersione)}</button>`
+      : ` <span class="piccolo" style="color:var(--label4)" title="L'aggiornamento dal portale funziona dalla versione ${VERSIONE_AGG_REMOTO}: questa volta il medico deve installare il programma a mano (📧 Programma)">aggiornabile dal portale dopo un'installazione a mano</span>`;
+    return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">App ${esc(u.versioneApp)} · da aggiornare</span>${btn}</span>`;
+  }
   return `<span class="ver"><span class="badge b-ok">App ${esc(u.versioneApp)}</span></span>`;
 }
 function disegnaVersioni(){
   const vecchi=utenti.filter(daAggiornare), box=$('dash-versioni');
   if(!vecchi.length){ box.style.display='none'; return; }
+  const remoti=vecchi.filter(u=>aggiornabileDaPortale(u) && !aggiornamentoInCorso(u));
+  const aMano=vecchi.filter(u=>!aggiornabileDaPortale(u));
   box.innerHTML=`⚠️ <b>${vecchi.length} ${vecchi.length===1?'medico usa':'medici usano'} una versione vecchia dell'app</b> (l'ultima è la ${esc(_ultimaVersione)}): `+
-    vecchi.map(u=>`${esc(u.nome||u.email)} (${esc(u.versioneApp)})`).join(', ')+'. <button class="btn btn-primary btn-sm" style="margin-left:6px" onclick="inviaATuttiDaAggiornare()">📧 Invia a tutti il programma aggiornato</button>';
+    vecchi.map(u=>`${esc(u.nome||u.email)} (${esc(u.versioneApp)}${aggiornamentoInCorso(u)?', aggiornamento inviato':''})`).join(', ')+'.'+
+    (remoti.length?` <button class="btn btn-primary btn-sm" style="margin-left:6px" onclick="aggiornaApp(utenti.filter(u=>daAggiornare(u)&&aggiornabileDaPortale(u)&&!aggiornamentoInCorso(u)).map(u=>u.uid))">⬆️ Aggiorna ${remoti.length===1?'la sua app':'le '+remoti.length+' app'} dal portale</button>`:'')+
+    (aMano.length?` <button class="btn btn-ghost btn-sm" style="margin-left:6px" onclick="inviaATuttiDaAggiornare()" title="Versioni precedenti alla ${VERSIONE_AGG_REMOTO}: vanno installate a mano una volta">📧 Invia il programma a chi ha una versione prima della ${VERSIONE_AGG_REMOTO} (${aMano.length})</button>`:'');
   box.style.display='block';
+}
+async function aggiornaApp(uids){
+  if(!uids.length || !_ultimaVersione) return;
+  const nomi=uids.map(x=>{ const u=utenti.find(v=>v.uid===x); return u?(u.nome||u.email):x; });
+  if(!confirm(`Aggiornare alla versione ${_ultimaVersione} l'app di:\n\n`+nomi.map(n=>'• '+n).join('\n')+
+    `\n\nL'app scarica l'aggiornamento in sottofondo (appena è aperta, o alla prossima apertura) e chiede al medico di premere «Aggiorna ora»: si chiude e si riapre in circa un minuto. I dati dello studio restano dove sono.`)) return;
+  try{
+    await portale({azione:'richiediAggiornamento', uids, versione:_ultimaVersione});
+    caricaUtenti();
+  }catch(e){ alert('⚠️ '+errore(e)); }
+}
+async function annullaAggiornamento(uid){
+  try{ await portale({azione:'richiediAggiornamento', uids:[uid], annulla:true}); caricaUtenti(); }
+  catch(e){ alert('⚠️ '+errore(e)); }
 }
 
 function disegnaScadenze(){
@@ -1240,7 +1285,14 @@ function disegnaGuida(){
 <li>In circa 20 minuti GitHub compila i tre installer (Gineco, Proct, Base), crea il tag <code>desktop-v</code> + versione e la release: li trovi in <b>Programmi</b>, pronti da scaricare o da inviare per email ai medici.</li>
 <li>Senza la spunta «Pubblica» il workflow compila solo gli installer di prova, scaricabili dalla pagina dell'esecuzione (Artifacts).</li>
 </ol>
-<p>Il medico installa il nuovo .exe sopra la versione vecchia: pazienti e impostazioni restano. L'avanzamento della compilazione si vede in ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop')}.</p>`],
+<h4>Aggiornare l'app di un medico dal portale (dalla versione 1.8.0)</h4>
+<ol>
+<li>In <b>Account</b> (o nella <b>Dashboard</b>), accanto a chi ha una versione vecchia, premi <b>«⬆️ Aggiorna a X»</b> (o «Aggiorna tutti»).</li>
+<li>Appena l'app del medico è aperta (o alla prossima apertura) scarica l'ultima versione pubblicata in sottofondo e mostra <b>«È pronta la versione X»</b>: il medico preme <b>«Aggiorna ora»</b> (o «Più tardi», e glielo richiede fra 30 minuti). L'app si chiude, si aggiorna e si riapre in circa un minuto; i dati restano.</li>
+<li>Nella colonna della versione vedi a che punto è: inviato, sta scaricando, pronto, oppure errore (passa il mouse per il motivo). Quando ha finito compare la versione nuova.</li>
+</ol>
+<p>Funziona solo con installer <b>firmati</b>: serve il secret ${_a(GH+'/settings/secrets/actions','TAURI_SIGNING_PRIVATE_KEY')} su GitHub (senza, il workflow avvisa e la release non contiene i file <code>latest-*.json</code>). Chi ha una versione precedente alla 1.8.0 deve installare il programma a mano una sola volta (📧 Programma).</p>
+<p>Installazione a mano: il medico installa il nuovo .exe sopra la versione vecchia: pazienti e impostazioni restano. L'avanzamento della compilazione si vede in ${_a(GH+'/actions/workflows/desktop.yml','Actions → App desktop')}.</p>`],
 ['☁️','Firebase: funzioni e deploy automatico',`
 <p>Le «funzioni» sono i piccoli programmi su Firebase che usano il portale (gestione account) e l'app (salvataggio dei testi del medico, invio email).</p>
 <ul>
@@ -1486,7 +1538,7 @@ async function confermaInvio(){
   btn.disabled=false;
 }
 async function inviaATuttiDaAggiornare(){
-  const vecchi=utenti.filter(daAggiornare);
+  const vecchi=utenti.filter(u=>daAggiornare(u) && !aggiornabileDaPortale(u));
   if(!vecchi.length) return;
   if(!confirm(`Inviare per email il programma aggiornato (${_ultimaVersione}) a ${vecchi.length} ${vecchi.length===1?'medico':'medici'}?\n\n`+vecchi.map(u=>'• '+(u.nome||u.email)+' — '+u.email).join('\n'))) return;
   const ok=[], ko=[];
