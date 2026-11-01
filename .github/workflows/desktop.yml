@@ -77,7 +77,7 @@ jobs:
         shell: bash
         run: |
           cd src-tauri/target/release/bundle/nsis
-          sig=$(ls *.exe.sig 2>/dev/null | head -1)
+          sig=$(ls *.exe.sig 2>/dev/null | head -1 || true)
           if [ -z "$sig" ]; then echo "Nessuna firma: salto"; exit 0; fi
           versione=$(node -p "require('../../../../tauri.conf.json').version")
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then tag="$GITHUB_REF_NAME"; else tag="desktop-v$versione"; fi
