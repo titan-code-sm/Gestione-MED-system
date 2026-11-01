@@ -63,6 +63,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: |
+          # Il secret incollato a mano può avere un a capo finale: lo togliamo
+          TAURI_SIGNING_PRIVATE_KEY="$(printf %s "$TAURI_SIGNING_PRIVATE_KEY" | tr -d '\r\n\t ')"
+          export TAURI_SIGNING_PRIVATE_KEY
           conf=()
           if [ "${{ matrix.modello }}" != "gineco" ]; then conf+=(--config src-tauri/tauri.${{ matrix.modello }}.conf.json); fi
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
