@@ -19,6 +19,7 @@ on:
       - 'desktop/src-tauri/**'
       - 'desktop/bridge/**'
       - 'desktop/package.json'
+      - 'desktop/android/**'
       - '.github/workflows/android.yml'
   workflow_dispatch:
     inputs:
@@ -83,8 +84,17 @@ jobs:
           conf=()
           if [ "${{ matrix.modello }}" != "gineco" ]; then conf+=(--config src-tauri/tauri.${{ matrix.modello }}.conf.json); fi
           npx tauri android init --ci --skip-targets-install "${conf[@]}"
+          gen=src-tauri/gen/android/app/src/main
           # Android 10: senza questa voce l'app non può scrivere in Download/Documents
-          sed -i 's/<application /<application android:requestLegacyExternalStorage="true" /' src-tauri/gen/android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application /<application android:requestLegacyExternalStorage="true" /' $gen/AndroidManifest.xml
+          # Stampa e apertura dei file (desktop/android): attività principale e FileProvider
+          pacchetto=$(node -p "require('./src-tauri/tauri.' + ('${{ matrix.modello }}'==='gineco' ? '' : '${{ matrix.modello }}.') + 'conf.json').identifier")
+          attivita=$(find $gen/java -name MainActivity.kt | head -1)
+          test -n "$attivita" || { echo "::error::MainActivity.kt non trovata"; exit 1; }
+          sed "s/^package PACCHETTO$/package $pacchetto/" android/MainActivity.kt > "$attivita"
+          mkdir -p $gen/res/xml && cp android/percorsi_file.xml $gen/res/xml/percorsi_file.xml
+          sed -i 's#</application>#<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.file" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/percorsi_file" /></provider></application>#' $gen/AndroidManifest.xml
+          grep -n "provider\|requestLegacy" $gen/AndroidManifest.xml
           npx tauri android build --ci --apk --target aarch64 armv7 "${conf[@]}" --config '{"bundle":{"createUpdaterArtifacts":false}}'
 
       - name: Firma dell'.apk

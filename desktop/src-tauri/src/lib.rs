@@ -278,21 +278,36 @@ async fn pdf_salva(request: tauri::ipc::Request<'_>) -> Result<Option<String>, S
 
 // File scaricati dall'app su Android (backup, esportazioni CSV/JSON): la
 // finestra dell'app non sa scaricare, quindi il file arriva qui e va in Download.
+// Con l'intestazione X-Dove: temporanei il file va invece nella cartella
+// temporanea dell'app (allegati da consultare: si aprono e non restano in Download).
 #[tauri::command]
-async fn file_salva(request: tauri::ipc::Request<'_>) -> Result<String, String> {
+async fn file_salva(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<String, String> {
     let tauri::ipc::InvokeBody::Raw(dati) = request.body() else { return Err("contenuto del file mancante".into()) };
     let nome = request.headers().get("x-nome").and_then(|v| v.to_str().ok()).unwrap_or("file.json");
     let est = percent_decode(nome).rsplit('.').next().unwrap_or("").to_lowercase();
-    if !["json", "csv", "pdf", "txt"].contains(&est.as_str()) { return Err("tipo di file non ammesso".into()); }
-    salva_in_download(nome, &est, dati)
+    if !["json", "csv", "pdf", "txt", "jpg", "jpeg", "png"].contains(&est.as_str()) { return Err("tipo di file non ammesso".into()); }
+    let temporaneo = request.headers().get("x-dove").and_then(|v| v.to_str().ok()) == Some("temporanei");
+    let dir = if temporaneo {
+        app.path().app_cache_dir().map_err(|e| e.to_string())?.join("aperti")
+    } else {
+        cartella_download()
+    };
+    salva_in(&dir, nome, &est, dati)
+}
+
+fn cartella_download() -> std::path::PathBuf {
+    #[cfg(mobile)]
+    { std::path::PathBuf::from(CARTELLA_TABLET).join("Download") }
+    #[cfg(desktop)]
+    { std::env::temp_dir() }
 }
 
 fn salva_in_download(nome: &str, est: &str, dati: &[u8]) -> Result<String, String> {
-    #[cfg(mobile)]
-    let dir = std::path::PathBuf::from(CARTELLA_TABLET).join("Download");
-    #[cfg(desktop)]
-    let dir = std::env::temp_dir();
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    salva_in(&cartella_download(), nome, est, dati)
+}
+
+fn salva_in(dir: &std::path::Path, nome: &str, est: &str, dati: &[u8]) -> Result<String, String> {
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let pulito: String = percent_decode(nome).chars()
         .map(|c| if c.is_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ' ' || c == '(' || c == ')' { c } else { '_' })
         .take(120).collect();

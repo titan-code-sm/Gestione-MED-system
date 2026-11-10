@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cartelle da cui l'app può far aprire i file ad altre app (lettore PDF, galleria) -->
+<paths>
+  <external-path name="tablet" path="." />
+  <cache-path name="temporanei" path="." />
+</paths>

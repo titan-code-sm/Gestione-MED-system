@@ -26,8 +26,11 @@
 
   document.documentElement.dataset.gsDesktop = '1';
   // Stessa app anche su tablet Android: lì la finestra non sa scaricare file,
-  // aprire PDF né stampare, quindi file e PDF vanno nella cartella Download.
+  // aprire PDF né stampare da sola. File e PDF vanno nella cartella Download e
+  // si aprono con le app del tablet; la stampa usa la finestra di stampa di
+  // Android (oggetto MedSystemAndroid, desktop/android/MainActivity.kt).
   const ANDROID = /Android/i.test(navigator.userAgent);
+  const NATIVO = window.MedSystemAndroid || null;
   if(ANDROID) document.documentElement.dataset.gsAndroid = '1';
 
   // ── Cifratura ──
@@ -237,13 +240,13 @@
     document.addEventListener('keydown', esc);
     const aggancia = ()=>{
       try{ fr.contentWindow.close = chiudi; }catch(e){}
+      // Le pagine di stampa chiamano print() da sole: sul tablet → stampa di Android
+      if(ANDROID) try{ fr.contentWindow.print = ()=>stampaSulTablet(fr, tit.textContent); }catch(e){}
       try{ if(fr.contentDocument && fr.contentDocument.title) tit.textContent = fr.contentDocument.title; }catch(e){}
     };
     fr.addEventListener('load', aggancia);
     ov.querySelector('.gsd-chiudi').onclick = chiudi;
-    ov.querySelector('.gsd-stampa').onclick = ANDROID ? ()=>{
-      if(typeof gsToast==='function') gsToast('🖨️ Sul tablet si stampa dal PDF: usa il pulsante «PDF» e apri il file dalla cartella Download','gs-error');
-    } : ()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ console.warn(e); } };
+    ov.querySelector('.gsd-stampa').onclick = ANDROID ? ()=>stampaSulTablet(fr, tit.textContent) : ()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ console.warn(e); } };
     if(src) fr.src = src;
     aggancia();
     return fr.contentWindow;
@@ -277,7 +280,7 @@
     if(web) window.open(href);
     else if(ANDROID && /\.pdf(\?|#|$)/i.test(href)){
       const nome = decodeURIComponent(href.split(/[?#]/)[0].split('/').pop() || 'documento.pdf');
-      fetch(new URL(href, location.href).href).then(r=>r.blob()).then(b=>salvaSulTablet(b, nome))
+      fetch(new URL(href, location.href).href).then(r=>r.blob()).then(b=>apriSulTablet(b, nome))
         .catch(err=>{ if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: '+(err && err.message || err),'gs-error'); });
     }
     else apriPannello(new URL(href, location.href).href, a.textContent.replace(/^\W+/, '').trim());
@@ -290,6 +293,7 @@
       const percorso = await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
       if(!percorso) return false;
       if(typeof gsToast==='function') gsToast('📄 PDF salvato: ' + percorso, 'gs-success');
+      if(ANDROID) apriPercorso(percorso, 'application/pdf');
       return true;
     }catch(e){
       console.error('Salvataggio PDF:', e);
@@ -298,7 +302,7 @@
     }
   };
   window.gsApriBlob = function(blob){
-    if(ANDROID && /pdf/i.test(blob.type||'')){ salvaSulTablet(blob, 'allegato.pdf'); return; }
+    if(ANDROID && /pdf/i.test(blob.type||'')){ apriSulTablet(blob, 'allegato.pdf'); return; }
     const url = URL.createObjectURL(blob);
     apriPannello(url, 'Allegato');
     setTimeout(()=>URL.revokeObjectURL(url), 10*60*1000);
@@ -317,7 +321,54 @@
       return false;
     }
   }
+  function tipoDi(nome){
+    const est = String(nome).split('.').pop().toLowerCase();
+    return { pdf:'application/pdf', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', csv:'text/csv', json:'application/json', txt:'text/plain' }[est] || 'application/octet-stream';
+  }
+  function apriPercorso(percorso, tipo){
+    let ok = false;
+    try{ ok = !!(NATIVO && NATIVO.apri(String(percorso), tipo || tipoDi(percorso))); }catch(e){ console.warn(e); }
+    if(!ok && typeof gsToast==='function') gsToast('⚠️ Nessuna app del tablet può aprire questo file: installane una (es. un lettore PDF)', 'gs-error');
+    return ok;
+  }
+  // Allegati e consensi da consultare: copia temporanea aperta con l'app del tablet
+  async function apriSulTablet(blob, nome){
+    try{
+      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'allegato.pdf'), 'X-Dove': 'temporanei' } });
+      apriPercorso(percorso, blob.type || tipoDi(nome));
+    }catch(e){
+      console.error('Apertura file:', e);
+      if(typeof gsToast==='function') gsToast('⚠️ File non aperto: ' + (e && e.message || e), 'gs-error');
+    }
+  }
+  // Stampa: la pagina del pannello (referto, cartella, ricetta…) passa alla
+  // finestra di stampa di Android, con le immagini incluse nella pagina.
+  async function inImmagine(src){
+    const r = await fetch(src);
+    const b = await r.blob();
+    return await new Promise((ok, ko)=>{ const fr = new FileReader(); fr.onload = ()=>ok(fr.result); fr.onerror = ko; fr.readAsDataURL(b); });
+  }
+  async function stampaSulTablet(fr, titolo){
+    if(!NATIVO){ if(typeof gsToast==='function') gsToast('⚠️ Stampa non disponibile su questo dispositivo','gs-error'); return; }
+    try{
+      const doc = fr.contentDocument;
+      const copia = doc.documentElement.cloneNode(true);
+      const originali = doc.querySelectorAll('img');
+      const immagini = copia.querySelectorAll('img');
+      await Promise.all([...immagini].map(async (img, i)=>{
+        const src = (originali[i] && originali[i].src) || img.getAttribute('src') || '';
+        if(!src || /^data:/i.test(src)) return;
+        try{ img.setAttribute('src', await inImmagine(src)); }catch(e){ console.warn('Immagine non inclusa nella stampa:', src); }
+      }));
+      copia.querySelectorAll('script').forEach(x=>x.remove());
+      NATIVO.stampa('<!DOCTYPE html>' + copia.outerHTML, titolo || doc.title || 'MED System');
+    }catch(e){
+      console.error('Stampa:', e);
+      if(typeof gsToast==='function') gsToast('⚠️ Stampa non riuscita: ' + (e && e.message || e), 'gs-error');
+    }
+  }
   if(ANDROID){
+    window.print = ()=>stampaSulTablet({ contentDocument: document }, document.title);
     window.gsSalvaFile = function(blob, nome){ return salvaSulTablet(blob, nome); };
     // L'app scarica creando un link <a download> e cliccandolo: qui il file
     // passa invece al tablet. Il link blob: viene liberato subito dopo il clic,
