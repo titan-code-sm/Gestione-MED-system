@@ -8,6 +8,10 @@
 //    «Salva come PDF») con la pagina da stampare, come «Stampa» su Windows
 //  - apri(percorso, tipo): apre un file salvato dall'app (PDF, immagini) con
 //    l'app del tablet adatta, come il doppio clic su Windows
+//  - scaricaAggiornamento(url) / installaAggiornamento(): «Aggiorna» del
+//    portale. Scarica in sottofondo il nuovo .apk dalle release di MED System e
+//    poi apre l'installazione di Android (il medico preme «Aggiorna»). Android
+//    accetta l'aggiornamento solo se è firmato con la stessa chiave: i dati restano.
 package PACCHETTO
 
 import android.content.Context
@@ -18,16 +22,23 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.core.content.FileProvider
+import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : TauriActivity() {
   override fun onWebViewCreate(webView: WebView) {
     super.onWebViewCreate(webView)
-    webView.addJavascriptInterface(PonteMedSystem(this), "MedSystemAndroid")
+    webView.addJavascriptInterface(PonteMedSystem(this, webView), "MedSystemAndroid")
   }
 }
 
-class PonteMedSystem(private val attivita: MainActivity) {
+class PonteMedSystem(private val attivita: MainActivity, private val finestra: WebView) {
+  private val origineRelease = "https://github.com/titan-code-sm/Gestione-MED-system/releases/download/"
+  @Volatile private var apkScaricato: File? = null
+
   // La pagina di stampa deve restare in memoria finché Android la usa
   private var paginaInStampa: WebView? = null
 
@@ -46,6 +57,64 @@ class PonteMedSystem(private val attivita: MainActivity) {
       }
       paginaInStampa = pagina
       pagina.loadDataWithBaseURL("https://tauri.localhost/", html, "text/html", "UTF-8", null)
+    }
+  }
+
+  private fun rispondiAggiornamento(stato: String, messaggio: String) {
+    val js = "window.__medsysAggiornamento && window.__medsysAggiornamento(" +
+      JSONObject.quote(stato) + "," + JSONObject.quote(messaggio) + ")"
+    attivita.runOnUiThread { finestra.evaluateJavascript(js, null) }
+  }
+
+  @JavascriptInterface
+  fun scaricaAggiornamento(url: String): Boolean {
+    if (!url.startsWith(origineRelease) || !url.endsWith(".apk")) return false
+    Thread {
+      try {
+        val cartella = File(attivita.cacheDir, "aggiornamento")
+        cartella.mkdirs()
+        val destinazione = File(cartella, "medsystem.apk")
+        var indirizzo = URL(url)
+        var connessione: HttpURLConnection
+        var salti = 0
+        while (true) {
+          connessione = indirizzo.openConnection() as HttpURLConnection
+          connessione.instanceFollowRedirects = false
+          connessione.connectTimeout = 20000
+          connessione.readTimeout = 60000
+          val codice = connessione.responseCode
+          if (codice in 300..399 && salti < 5) {
+            indirizzo = URL(indirizzo, connessione.getHeaderField("Location"))
+            connessione.disconnect()
+            salti++
+            continue
+          }
+          if (codice != 200) throw Exception("download non riuscito (codice $codice)")
+          break
+        }
+        connessione.inputStream.use { ingresso -> FileOutputStream(destinazione).use { ingresso.copyTo(it) } }
+        connessione.disconnect()
+        apkScaricato = destinazione
+        rispondiAggiornamento("ok", "")
+      } catch (e: Exception) {
+        rispondiAggiornamento("errore", e.message ?: "download non riuscito")
+      }
+    }.start()
+    return true
+  }
+
+  @JavascriptInterface
+  fun installaAggiornamento(): Boolean {
+    val file = apkScaricato ?: return false
+    return try {
+      val uri = FileProvider.getUriForFile(attivita, attivita.packageName + ".file", file)
+      val intento = Intent(Intent.ACTION_VIEW)
+        .setDataAndType(uri, "application/vnd.android.package-archive")
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+      attivita.startActivity(intento)
+      true
+    } catch (e: Exception) {
+      false
     }
   }
 

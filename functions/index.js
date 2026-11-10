@@ -365,6 +365,7 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
           // della password, il profilo l'ultima apertura dell'app. Vale la più recente.
           ultimoAccesso: piuRecente(p.ultimoAccesso, u.metadata.lastSignInTime),
           versioneApp: typeof p.versioneApp === "string" ? p.versioneApp : "",
+          dispositivoApp: p.dispositivoApp === "android" ? "android" : (p.versioneApp ? "windows" : ""),
           aggiornamentoRichiesto: p.aggiornamentoRichiesto && typeof p.aggiornamentoRichiesto === "object" ? p.aggiornamentoRichiesto : null,
           aggiornamentoEsito: p.aggiornamentoEsito && typeof p.aggiornamentoEsito === "object" ? p.aggiornamentoEsito : null,
           programmaInviato: p.programmaInviato && typeof p.programmaInviato === "object" ? p.programmaInviato : null,
