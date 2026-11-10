@@ -1,6 +1,7 @@
 # Compila l'app per tablet Android (.apk) dalle stesse sorgenti dell'app
 # Windows, per tutte e tre le versioni: MED System Gineco, Proct e base.
-# Parte solo a mano: Actions → «App Android (tablet)» → Run workflow.
+# Parte a mano (Actions → «App Android (tablet)» → Run workflow) e, solo come
+# prova di compilazione, sulle pull request (e sui rami claude/) che toccano l'app.
 #  - senza «pubblica»: gli .apk restano come artefatti scaricabili (prova)
 #  - con «pubblica» (dal ramo main): gli .apk si aggiungono alla release
 #    desktop-v<versione di tauri.conf.json>, accanto agli installer Windows,
@@ -13,6 +14,17 @@
 name: App Android (tablet)
 
 on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'desktop/src-tauri/**'
+      - 'desktop/bridge/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'desktop/src-tauri/**'
+      - 'desktop/bridge/**'
+      - '.github/workflows/android.yml'
   workflow_dispatch:
     inputs:
       pubblica:
