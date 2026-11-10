@@ -814,8 +814,9 @@ input.ob-settimane-big{font-size:1.5rem;font-weight:800;font-family:var(--font-s
   .mob-bar{display:flex;}
 
   /* Sidebar → drawer */
+  /* Il menu parte sotto la barra in alto: prima il nome del medico ci finiva sotto */
   aside{
-    position:fixed;top:0;bottom:0;
+    position:fixed;top:56px;bottom:0;
     left:-275px;width:275px;
     z-index:89;
     transition:left .3s cubic-bezier(.32,.72,0,1);
@@ -987,6 +988,7 @@ input.ob-settimane-big{font-size:1.5rem;font-weight:800;font-family:var(--font-s
     height:calc(56px + env(safe-area-inset-top));
   }
   main{padding-top:calc(56px + env(safe-area-inset-top));}
+  @media(max-width:768px){ aside{top:calc(56px + env(safe-area-inset-top));} }
   .modal-sm,.cal-modal-box,.forgot-card,.mbox{
     padding-bottom:calc(32px + env(safe-area-inset-bottom)) !important;
   }
