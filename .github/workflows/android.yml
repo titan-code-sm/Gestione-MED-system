@@ -6,6 +6,7 @@
 #  - con «pubblica» (dal ramo main): gli .apk si aggiungono alla release
 #    desktop-v<versione di tauri.conf.json>, accanto agli installer Windows,
 #    così il portale e le email possono dare il link anche per il tablet.
+#  - in automatico dopo ogni release dell'app Windows (workflow desktop.yml).
 # Firma: Android installa un aggiornamento solo se è firmato con la stessa
 # chiave della versione già presente. La chiave sta nei secret
 # ANDROID_KEYSTORE (file .jks in base64) e ANDROID_KEYSTORE_PASSWORD. Se
@@ -25,6 +26,13 @@ on:
     inputs:
       pubblica:
         description: 'Aggiungi gli .apk alla release desktop-v<versione> (solo da main)'
+        type: boolean
+        default: false
+  # Chiamato da «App desktop (Windows)» dopo aver pubblicato una release: così
+  # ogni nuova versione ha sia gli installer Windows sia gli .apk.
+  workflow_call:
+    inputs:
+      pubblica:
         type: boolean
         default: false
 
@@ -132,7 +140,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: inputs.pubblica && github.ref == 'refs/heads/main'
+    if: inputs.pubblica && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/desktop-v'))
     needs: build-android
     runs-on: ubuntu-latest
     steps:
@@ -140,7 +148,9 @@ jobs:
 
       - name: Nome del tag
         id: tag
-        run: echo "nome=desktop-v$(node -p "require('./desktop/src-tauri/tauri.conf.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo "nome=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else echo "nome=desktop-v$(node -p "require('./desktop/src-tauri/tauri.conf.json').version")" >> "$GITHUB_OUTPUT"; fi
 
       - uses: actions/download-artifact@v4
         with:

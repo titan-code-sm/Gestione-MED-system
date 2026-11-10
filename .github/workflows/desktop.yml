@@ -139,3 +139,12 @@ jobs:
           files: |
             installer/*.exe
             installer/latest-*.json
+
+  # Dopo la release: compila gli .apk per i tablet Android e li aggiunge alla
+  # stessa release (workflow «App Android (tablet)»).
+  android:
+    needs: release
+    uses: ./.github/workflows/android.yml
+    with:
+      pubblica: true
+    secrets: inherit
