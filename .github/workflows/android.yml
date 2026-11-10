@@ -18,6 +18,7 @@ on:
     paths:
       - 'desktop/src-tauri/**'
       - 'desktop/bridge/**'
+      - 'desktop/package.json'
       - '.github/workflows/android.yml'
   workflow_dispatch:
     inputs:
