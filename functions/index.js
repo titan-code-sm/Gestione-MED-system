@@ -214,40 +214,52 @@ async function ultimaRelease() {
     if (!r.ok) { errore = errore || new HttpsError("unavailable", `GitHub non raggiungibile (${r.status}).`); continue; }
     const rel = await r.json();
     const exe = (rel.assets || []).filter((a) => /\.exe$/i.test(a.name));
-    if (exe.length) return { versione: String(rel.tag_name || "").replace(/^desktop-v/, ""), exe };
+    const apk = (rel.assets || []).filter((a) => /\.apk$/i.test(a.name));
+    if (exe.length) return { versione: String(rel.tag_name || "").replace(/^desktop-v/, ""), exe, apk };
   }
   throw errore || new HttpsError("not-found", "Nessuna versione del programma pubblicata.");
 }
 function escHtml(t) { return String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-function emailProgramma({ nome, genere, email, nomeApp, versione, link, mb, nota, password }) {
+function emailProgramma({ nome, genere, email, nomeApp, versione, link, mb, nota, password, android }) {
+  const dove = android ? "sul tablet Android dello studio" : "sul PC dello studio";
+  const dispositivo = android ? "tablet" : "PC";
   const saluto = genere === "f" ? `Gentile Dott.ssa ${nome}` : genere === "m" ? `Gentile Dott. ${nome}` : `Gentile ${nome}`;
   const righe = [
     `${saluto},`,
     "",
-    `ecco il programma ${nomeApp} (versione ${versione}) da installare sul PC dello studio.`,
+    `ecco il programma ${nomeApp} (versione ${versione}) da installare ${dove}.`,
     "",
-    "1. Scarica l'installer da questo link (Windows, " + mb + " MB):",
-    `   ${link}`,
-    "2. Apri il file scaricato e segui le istruzioni.",
-    "   Se Windows mostra «Windows ha protetto il PC», clicca «Ulteriori informazioni» e poi «Esegui comunque».",
+    ...(android ? [
+      "1. Apri questo link DAL TABLET e scarica l'app (Android, " + mb + " MB):",
+      `   ${link}`,
+      "2. Apri il file scaricato. Se il tablet chiede di consentire l'installazione da questa fonte, attivala e torna indietro.",
+      "   Poi premi «Installa». Se compare un avviso di Play Protect, scegli «Installa comunque».",
+    ] : [
+      "1. Scarica l'installer da questo link (Windows, " + mb + " MB):",
+      `   ${link}`,
+      "2. Apri il file scaricato e segui le istruzioni.",
+      "   Se Windows mostra «Windows ha protetto il PC», clicca «Ulteriori informazioni» e poi «Esegui comunque».",
+    ]),
     "3. Apri MED System e accedi con il tuo account:",
     `   Email: ${email}`,
     ...(password ? [`   Password provvisoria: ${password}`, "   Al primo accesso il programma ti chiederà di sceglierne una tua."] : ["   La password è quella che usi già (o quella che ti è stata comunicata)."]),
     "",
-    "I dati delle pazienti restano solo sul tuo PC: non passano da internet.",
+    `I dati delle pazienti restano solo sul tuo ${dispositivo}: non passano da internet.`,
   ];
   if (nota) righe.push("", nota);
   righe.push("", "Per qualsiasi problema rispondi a questa email.", "", "MED System");
   const testo = righe.join("\n");
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.55;color:#0f172a;max-width:560px">
 <p>${escHtml(saluto)},</p>
-<p>ecco il programma <b>${escHtml(nomeApp)}</b> (versione ${escHtml(versione)}) da installare sul PC dello studio.</p>
-<p style="margin:22px 0"><a href="${escHtml(link)}" style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">⬇ Scarica ${escHtml(nomeApp)}</a><br><span style="color:#64748b;font-size:13px">Windows · ${escHtml(mb)} MB</span></p>
+<p>ecco il programma <b>${escHtml(nomeApp)}</b> (versione ${escHtml(versione)}) da installare ${dove}.</p>
+<p style="margin:22px 0"><a href="${escHtml(link)}" style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">⬇ Scarica ${escHtml(nomeApp)}</a><br><span style="color:#64748b;font-size:13px">${android ? "Tablet Android: apri il link dal tablet" : "Windows"} · ${escHtml(mb)} MB</span></p>
 <ol style="padding-left:20px">
-<li>Apri il file scaricato e segui le istruzioni. Se Windows mostra «Windows ha protetto il PC», clicca <b>Ulteriori informazioni</b> e poi <b>Esegui comunque</b>.</li>
+${android
+    ? "<li>Apri il file scaricato. Se il tablet chiede di consentire l'installazione da questa fonte, attivala e torna indietro, poi premi <b>Installa</b>. Se compare un avviso di Play Protect, scegli <b>Installa comunque</b>.</li>"
+    : "<li>Apri il file scaricato e segui le istruzioni. Se Windows mostra «Windows ha protetto il PC», clicca <b>Ulteriori informazioni</b> e poi <b>Esegui comunque</b>.</li>"}
 <li>Apri MED System e accedi con il tuo account:<br>Email: <b>${escHtml(email)}</b>${password ? `<br>Password provvisoria: <b style="font-family:Consolas,monospace">${escHtml(password)}</b><br><span style="color:#64748b">Al primo accesso il programma ti chiederà di sceglierne una tua.</span>` : "<br><span style=\"color:#64748b\">La password è quella che usi già (o quella che ti è stata comunicata).</span>"}</li>
 </ol>
-<p style="color:#64748b">I dati delle pazienti restano solo sul tuo PC: non passano da internet.</p>
+<p style="color:#64748b">I dati delle pazienti restano solo sul tuo ${dispositivo}: non passano da internet.</p>
 ${nota ? `<p>${escHtml(nota).replace(/\n/g, "<br>")}</p>` : ""}
 <p>Per qualsiasi problema rispondi a questa email.</p>
 <p>MED System</p>
@@ -551,16 +563,17 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
     const profiloDoc = await db.collection("utenti").doc(uid).get();
     const p = profiloDoc.exists ? profiloDoc.data() : {};
     const modello = MODELLI.includes(d.modello) ? d.modello : (MODELLI.includes(p.modello) ? p.modello : "gineco");
-    const { versione, exe } = await ultimaRelease();
-    const file = exe.find((a) => modelloDelFile(a.name) === modello);
-    if (!file) throw new HttpsError("not-found", `Nell'ultima versione manca l'installer di ${NOMI_MODELLO[modello]}.`);
+    const android = d.dispositivo === "android";
+    const { versione, exe, apk } = await ultimaRelease();
+    const file = (android ? apk : exe).find((a) => modelloDelFile(a.name) === modello);
+    if (!file) throw new HttpsError("not-found", `Nell'ultima versione manca ${android ? "l'app Android" : "l'installer"} di ${NOMI_MODELLO[modello]}.`);
     // La password provvisoria va nell'email solo se l'account deve ancora cambiarla.
     const password = typeof d.password === "string" && d.password.length >= 8 && d.password.length <= 128 && p.mustChangePassword === true ? d.password : "";
     const nome = (p.nome || u.displayName || u.email.split("@")[0]).replace(/[\r\n]+/g, " ").slice(0, 120);
     const { testo: corpoTesto, html } = emailProgramma({
       nome, genere: GENERI.includes(p.genere) ? p.genere : "n", email: u.email,
       nomeApp: NOMI_MODELLO[modello], versione, link: file.browser_download_url,
-      mb: (file.size / 1048576).toFixed(0), nota: testo(d.nota, 2000), password,
+      mb: (file.size / 1048576).toFixed(0), nota: testo(d.nota, 2000), password, android,
     });
     const transporter = postino();
     try {
@@ -568,7 +581,7 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
         from: { name: "MED System", address: MITTENTE },
         to: u.email,
         replyTo: ADMIN_EMAIL,
-        subject: `${NOMI_MODELLO[modello]} ${versione}: il programma da installare`,
+        subject: `${NOMI_MODELLO[modello]} ${versione}: ${android ? "l'app da installare sul tablet" : "il programma da installare"}`,
         text: corpoTesto,
         html,
       });
@@ -576,7 +589,7 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
       console.warn("Invio programma fallito:", e.message);
       throw new HttpsError("internal", "Invio dell'email non riuscito: " + spiegaErroreEmail(e));
     }
-    const programmaInviato = { data: new Date().toISOString(), versione, modello, file: file.name, conPassword: !!password };
+    const programmaInviato = { data: new Date().toISOString(), versione, modello, file: file.name, conPassword: !!password, dispositivo: android ? "android" : "windows" };
     await db.collection("utenti").doc(uid).set({ programmaInviato }, { merge: true });
     return { ok: true, email: u.email, ...programmaInviato };
   }

@@ -419,7 +419,8 @@ a.btn{text-decoration:none}
       </div>
     </div>
     <div class="sezione">
-      <label class="spunta"><input type="checkbox" id="n-invia" checked onchange="$('n-cred-riga').style.display=this.checked?'':'none'"> 📧 Invia subito per email il programma da installare</label>
+      <label class="spunta"><input type="checkbox" id="n-invia" checked onchange="$('n-cred-riga').style.display=$('n-disp-riga').style.display=this.checked?'':'none'"> 📧 Invia subito per email il programma da installare</label>
+      <div id="n-disp-riga" style="margin-left:26px;max-width:320px"><label for="n-disp">Per</label><select id="n-disp"><option value="windows">PC Windows (.exe)</option><option value="android">Tablet Android (.apk)</option></select></div>
       <label class="spunta" id="n-cred-riga" style="margin-left:26px"><input type="checkbox" id="n-cred"> Scrivi nell'email anche la password provvisoria</label>
     </div>
     <div class="msg" id="n-msg"></div>
@@ -454,6 +455,7 @@ a.btn{text-decoration:none}
     <p id="m-inv-testo"></p>
     <div class="g2">
       <div><label for="inv-modello">Programma</label><select id="inv-modello" onchange="anteprimaInvio()"></select></div>
+      <div><label for="inv-disp">Per</label><select id="inv-disp" onchange="anteprimaInvio()"><option value="windows">PC Windows (.exe)</option><option value="android">Tablet Android (.apk)</option></select></div>
       <div><label>File che riceverà</label><div id="inv-file" class="lic" style="padding-top:8px">—</div></div>
     </div>
     <label for="inv-nota">Messaggio aggiuntivo (facoltativo)</label>
@@ -1330,10 +1332,10 @@ async function caricaDownload(){
     const rel=await ultimaRelease();
     if(!rel){ box.textContent='Nessuna versione pubblicata per ora.'; return; }
     _release=rel;
-    const exe=(rel.assets||[]).filter(a=>/\.exe$/i.test(a.name));
+    const exe=(rel.assets||[]).filter(a=>/\.(exe|apk)$/i.test(a.name));
     if(!exe.length){ box.textContent='L\'ultima versione pubblicata non contiene installer.'; return; }
-    const nomeVersione=n=>/proct/i.test(n)?'MED System Proct':/gineco/i.test(n)?'MED System Gineco':'MED System (base, tutte le specialità)';
-    const ordine=n=>/gineco/i.test(n)?0:/proct/i.test(n)?1:2;
+    const nomeVersione=n=>(/proct/i.test(n)?'MED System Proct':/gineco/i.test(n)?'MED System Gineco':'MED System (base, tutte le specialità)')+(/\.apk$/i.test(n)?' · tablet Android':' · PC Windows');
+    const ordine=n=>(/gineco/i.test(n)?0:/proct/i.test(n)?2:4)+(/\.apk$/i.test(n)?1:0);
     box.innerHTML=`<div style="margin-bottom:8px">Versione <strong>${esc((rel.tag_name||'').replace(/^desktop-v/,''))}</strong> · pubblicata ${esc(dataBreve(rel.published_at))}</div>`+
       exe.sort((a,b)=>ordine(a.name)-ordine(b.name)).map(a=>`<div class="pag" style="padding:10px 0"><span style="flex:1;min-width:0"><b>${esc(nomeVersione(a.name))}</b><div class="piccolo" style="word-break:break-all">${esc(a.name)} · ${(a.size/1048576).toFixed(1)} MB</div></span><button class="btn btn-ghost btn-sm" onclick="copiaLink('${esc(a.browser_download_url)}',this)" title="Copia il link da incollare in un messaggio">🔗 Copia link</button><a class="btn btn-primary btn-sm" href="${esc(a.browser_download_url)}">⬇ Scarica</a></div>`).join('');
     anteprimaInvio();
@@ -1490,7 +1492,7 @@ async function creaAccount(){
     if($('n-invia').checked){
       msg(m,'Account creato, invio del programma in corso…',true);
       try{
-        const r=(await portale({azione:'inviaProgramma', uid, modello, ...($('n-cred').checked?{password:dati.password}:{})})).data;
+        const r=(await portale({azione:'inviaProgramma', uid, modello, dispositivo:$('n-disp').value, ...($('n-cred').checked?{password:dati.password}:{})})).data;
         esito+=` 📧 Programma ${r.versione} inviato a ${r.email}${r.conPassword?' (con la password)':''}.`;
       }catch(e){ esito+=' ⚠️ Programma non inviato: '+errore(e)+' — puoi riprovare da «📧 Programma».'; }
     }
@@ -1504,8 +1506,9 @@ async function creaAccount(){
 
 // ── Invio del programma per email ──
 let _uidInv=null;
-function _exeDelModello(modello){
-  const exe=((_release&&_release.assets)||[]).filter(a=>/\.exe$/i.test(a.name));
+function _exeDelModello(modello, dispositivo){
+  const est=dispositivo==='android'?/\.apk$/i:/\.exe$/i;
+  const exe=((_release&&_release.assets)||[]).filter(a=>est.test(a.name));
   const mod=n=>/proct/i.test(n)?'proct':/gineco/i.test(n)?'gineco':'base';
   return exe.find(a=>mod(a.name)===modello)||null;
 }
@@ -1514,6 +1517,7 @@ function apriInvio(uid){
   if(!u){ alert('Scegli un medico.'); return; }
   _uidInv=uid;
   riempiSelect('inv-modello', VERSIONI, VERSIONI[u.modello]?u.modello:'gineco');
+  $('inv-disp').value=(u.programmaInviato&&u.programmaInviato.dispositivo==='android')?'android':'windows';
   $('m-inv-testo').innerHTML=`A <b>${esc(u.nome||u.email)}</b>, all'indirizzo <b>${esc(u.email)}</b>: link per scaricare il programma e istruzioni per installarlo e accedere.`+
     (u.programmaInviato?`<br><span class="piccolo">Ultimo invio: versione ${esc(u.programmaInviato.versione)} il ${esc(dataBreve(u.programmaInviato.data))}.</span>`:'');
   $('inv-nota').value=''; $('m-inv-msg').textContent='';
@@ -1522,16 +1526,16 @@ function apriInvio(uid){
 }
 function anteprimaInvio(){
   if(!$('inv-modello').value) return;
-  const f=_exeDelModello($('inv-modello').value);
+  const f=_exeDelModello($('inv-modello').value, $('inv-disp').value);
   $('inv-file').innerHTML=!_release ? '<span style="color:var(--label4)">Versioni in caricamento…</span>'
     : f ? `<b>${esc(f.name)}</b><div style="color:var(--label4)">versione ${esc(String(_release.tag_name||'').replace(/^desktop-v/,''))} · ${(f.size/1048576).toFixed(1)} MB</div>`
-    : '<span class="scad-ko">Nell\'ultima versione manca questo installer.</span>';
+    : `<span class="scad-ko">Nell'ultima versione manca ${$('inv-disp').value==='android'?"l'app Android":'questo installer'}.</span>`;
 }
 async function confermaInvio(){
   const btn=$('m-inv-btn'), m=$('m-inv-msg');
   btn.disabled=true; msg(m,'Invio in corso…',true);
   try{
-    const r=(await portale({azione:'inviaProgramma', uid:_uidInv, modello:$('inv-modello').value, nota:$('inv-nota').value.trim()})).data;
+    const r=(await portale({azione:'inviaProgramma', uid:_uidInv, modello:$('inv-modello').value, dispositivo:$('inv-disp').value, nota:$('inv-nota').value.trim()})).data;
     msg(m,`✅ Email inviata a ${r.email}: ${r.file} (versione ${r.versione}).`,true);
     caricaUtenti();
   }catch(e){ msg(m,errore(e)); }
