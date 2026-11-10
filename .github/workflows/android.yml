@@ -1,7 +1,7 @@
 # Compila l'app per tablet Android (.apk) dalle stesse sorgenti dell'app
 # Windows, per tutte e tre le versioni: MED System Gineco, Proct e base.
 # Parte a mano (Actions → «App Android (tablet)» → Run workflow) e, solo come
-# prova di compilazione, sulle pull request (e sui rami claude/) che toccano l'app.
+# prova di compilazione, sulle pull request che toccano l'app.
 #  - senza «pubblica»: gli .apk restano come artefatti scaricabili (prova)
 #  - con «pubblica» (dal ramo main): gli .apk si aggiungono alla release
 #    desktop-v<versione di tauri.conf.json>, accanto agli installer Windows,
@@ -14,12 +14,6 @@
 name: App Android (tablet)
 
 on:
-  push:
-    branches: ['claude/**']
-    paths:
-      - 'desktop/src-tauri/**'
-      - 'desktop/bridge/**'
-      - '.github/workflows/android.yml'
   pull_request:
     paths:
       - 'desktop/src-tauri/**'
@@ -59,11 +53,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
-
+      # L'SDK Android è già installato sui runner di GitHub (ANDROID_HOME)
       - name: NDK
         run: |
-          sdkmanager --install "ndk;$NDK_VERSIONE" "build-tools;34.0.0" > /dev/null
+          sdkmanager=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          yes | "$sdkmanager" --licenses > /dev/null || true
+          "$sdkmanager" --install "ndk;$NDK_VERSIONE" "build-tools;34.0.0" > /dev/null
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSIONE" >> "$GITHUB_ENV"
 
       - uses: dtolnay/rust-toolchain@stable
