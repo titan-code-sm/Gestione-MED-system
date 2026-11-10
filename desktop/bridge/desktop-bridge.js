@@ -367,6 +367,35 @@
       if(typeof gsToast==='function') gsToast('⚠️ Stampa non riuscita: ' + (e && e.message || e), 'gs-error');
     }
   }
+  // «Aggiorna» del portale sul tablet: l'ultima release di MED System contiene
+  // l'.apk di questa versione; lo scarica MainActivity.kt e Android lo installa.
+  if(ANDROID && NATIVO && NATIVO.scaricaAggiornamento){
+    const piuNuova = (a, b)=>{
+      const pa = String(a).split('.').map(n=>parseInt(n,10)||0), pb = String(b).split('.').map(n=>parseInt(n,10)||0);
+      for(let i=0;i<3;i++){ if((pa[i]||0)!==(pb[i]||0)) return (pa[i]||0)>(pb[i]||0); }
+      return false;
+    };
+    const modelloDi = n=>/proct/i.test(n)?'proct':/gineco/i.test(n)?'gineco':'base';
+    window.gsAggiornamentoScarica = async function(){
+      const attuale = await T.app.getVersion();
+      const r = await fetch('https://api.github.com/repos/titan-code-sm/Gestione-MED-system/releases/latest', { headers: { Accept: 'application/vnd.github+json' } });
+      if(!r.ok) throw new Error('GitHub non raggiungibile (' + r.status + ')');
+      const rel = await r.json();
+      const versione = String(rel.tag_name || '').replace(/^desktop-v/, '');
+      if(!piuNuova(versione, attuale)) return null;
+      const mod = window.GS_MODELLO_APP || 'gineco';
+      const apk = (rel.assets || []).find(a=>/\.apk$/i.test(a.name) && modelloDi(a.name)===mod);
+      if(!apk) return null;
+      await new Promise((ok, ko)=>{
+        window.__medsysAggiornamento = (stato, msg)=>{ window.__medsysAggiornamento = null; stato==='ok' ? ok() : ko(new Error(msg || 'download non riuscito')); };
+        if(!NATIVO.scaricaAggiornamento(apk.browser_download_url)) ko(new Error('indirizzo di download non valido'));
+      });
+      return { versione, attuale };
+    };
+    window.gsAggiornamentoInstalla = async function(){
+      if(!NATIVO.installaAggiornamento()) throw new Error('installazione non avviata: riprova da «Aggiorna» del portale');
+    };
+  }
   if(ANDROID){
     window.print = ()=>stampaSulTablet({ contentDocument: document }, document.title);
     window.gsSalvaFile = function(blob, nome){ return salvaSulTablet(blob, nome); };

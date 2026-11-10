@@ -716,15 +716,15 @@ function cellaVersione(u){
   const id=esc(u.uid);
   if(aggiornamentoInCorso(u)){
     const a=testoAggiornamento(u);
-    return `<span class="ver"><span class="badge b-warn">App ${esc(u.versioneApp)}</span> <span class="badge ${a.cls}" title="${esc(a.tit)}">${esc(a.t)}</span> <button class="btn btn-ghost btn-sm" onclick="annullaAggiornamento('${id}')" title="Ritira la richiesta di aggiornamento">Annulla</button>${a.cls==='b-ko'?` <button class="btn btn-ghost btn-sm" onclick="aggiornaApp(['${id}'])">Riprova</button>`:''}</span>`;
+    return `<span class="ver"><span class="badge b-warn">${u.dispositivoApp==='android'?'📱 ':''}App ${esc(u.versioneApp)}</span> <span class="badge ${a.cls}" title="${esc(a.tit)}">${esc(a.t)}</span> <button class="btn btn-ghost btn-sm" onclick="annullaAggiornamento('${id}')" title="Ritira la richiesta di aggiornamento">Annulla</button>${a.cls==='b-ko'?` <button class="btn btn-ghost btn-sm" onclick="aggiornaApp(['${id}'])">Riprova</button>`:''}</span>`;
   }
   if(daAggiornare(u)){
     const btn=aggiornabileDaPortale(u)
       ? ` <button class="btn btn-primary btn-sm" onclick="aggiornaApp(['${id}'])" title="L'app del medico scarica la ${esc(_ultimaVersione)} e si aggiorna">⬆️ Aggiorna a ${esc(_ultimaVersione)}</button>`
       : ` <span class="piccolo" style="color:var(--label4)" title="L'aggiornamento dal portale funziona dalla versione ${VERSIONE_AGG_REMOTO}: questa volta il medico deve installare il programma a mano (📧 Programma)">aggiornabile dal portale dopo un'installazione a mano</span>`;
-    return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">App ${esc(u.versioneApp)} · da aggiornare</span>${btn}</span>`;
+    return `<span class="ver"><span class="badge b-warn" title="L'ultima versione pubblicata è la ${esc(_ultimaVersione)}">${u.dispositivoApp==='android'?'📱 ':''}App ${esc(u.versioneApp)} · da aggiornare</span>${btn}</span>`;
   }
-  return `<span class="ver"><span class="badge b-ok">App ${esc(u.versioneApp)}</span></span>`;
+  return `<span class="ver"><span class="badge b-ok">${u.dispositivoApp==='android'?'📱 ':''}App ${esc(u.versioneApp)}</span></span>`;
 }
 function disegnaVersioni(){
   const vecchi=utenti.filter(daAggiornare), box=$('dash-versioni');
