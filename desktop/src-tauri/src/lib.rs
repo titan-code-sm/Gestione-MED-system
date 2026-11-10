@@ -11,13 +11,21 @@
 // dati dell'app, protetto con DPAPI (leggibile solo dallo stesso account
 // Windows). Se la voce in Gestione credenziali sparisce, l'app la ritrova dal
 // file e la ripristina, invece di perdere l'accesso ai dati.
+//
+// Su Android (tablet) non c'è Gestione credenziali: i segreti stanno in un file
+// nella cartella privata dell'app, che nessun'altra app può leggere, protetta
+// dalla cifratura del tablet. I file che l'app salva (PDF, backup, esportazioni)
+// vanno nelle cartelle Download e Documents del tablet.
 use tauri::Manager;
+#[cfg(desktop)]
 use tauri_plugin_dialog::DialogExt;
+#[cfg(desktop)]
 use tauri_plugin_opener::OpenerExt;
 
 const CHIAVE_DB: &str = "chiave-database";
 const SEGRETI_AMMESSI: [&str; 1] = ["password-backup"];
 
+#[cfg(desktop)]
 fn voce(app: &tauri::AppHandle, nome: &str) -> Result<keyring::Entry, String> {
     let servizio = app
         .config()
@@ -89,6 +97,7 @@ fn scrivi_copia(app: &tauri::AppHandle, nome: &str, valore: &str) -> Result<(), 
 #[cfg(not(windows))]
 fn scrivi_copia(_app: &tauri::AppHandle, _nome: &str, _valore: &str) -> Result<(), String> { Ok(()) }
 
+#[cfg(desktop)]
 fn segreto_leggi_interno(app: &tauri::AppHandle, nome: &str) -> Result<Option<String>, String> {
     let entry = voce(app, nome)?;
     match entry.get_password() {
@@ -110,6 +119,7 @@ fn segreto_leggi_interno(app: &tauri::AppHandle, nome: &str) -> Result<Option<St
     }
 }
 
+#[cfg(desktop)]
 fn segreto_salva_interno(app: &tauri::AppHandle, nome: &str, valore: &str) -> Result<(), String> {
     let r1 = voce(app, nome)?.set_password(valore).map_err(|e| e.to_string());
     let r2 = scrivi_copia(app, nome, valore);
@@ -117,6 +127,29 @@ fn segreto_salva_interno(app: &tauri::AppHandle, nome: &str, valore: &str) -> Re
         (Err(a), Err(b)) => Err(format!("{a}; {b}")),
         _ => Ok(()),
     }
+}
+
+#[cfg(mobile)]
+fn percorso_segreto(app: &tauri::AppHandle, nome: &str) -> Result<std::path::PathBuf, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("segreti");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join(format!("{nome}.txt")))
+}
+#[cfg(mobile)]
+fn segreto_leggi_interno(app: &tauri::AppHandle, nome: &str) -> Result<Option<String>, String> {
+    match std::fs::read_to_string(percorso_segreto(app, nome)?) {
+        Ok(v) if !v.is_empty() => Ok(Some(v)),
+        Ok(_) => Ok(None),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+#[cfg(mobile)]
+fn segreto_salva_interno(app: &tauri::AppHandle, nome: &str, valore: &str) -> Result<(), String> {
+    let p = percorso_segreto(app, nome)?;
+    let tmp = p.with_extension("tmp");
+    std::fs::write(&tmp, valore.as_bytes()).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &p).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -171,11 +204,23 @@ fn elenca(cartella: &std::path::Path, prefisso: &str) -> Vec<FileBackup> {
     v
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn backup_scegli_cartella(app: tauri::AppHandle) -> Result<Option<String>, String> {
     let scelta = app.dialog().file().set_title("Cartella dei backup automatici").blocking_pick_folder();
     Ok(scelta.and_then(|p| p.into_path().ok()).map(|p| p.to_string_lossy().to_string()))
 }
+// Su Android non si sceglie una cartella qualsiasi: i backup vanno sempre in
+// Documents/MED System backup del tablet (si copiano su PC o chiavetta da lì).
+#[cfg(mobile)]
+#[tauri::command]
+async fn backup_scegli_cartella() -> Result<Option<String>, String> {
+    let dir = std::path::PathBuf::from(CARTELLA_TABLET).join("Documents").join("MED System backup");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("impossibile creare {}: {e}", dir.display()))?;
+    Ok(Some(dir.to_string_lossy().to_string()))
+}
+#[cfg(mobile)]
+const CARTELLA_TABLET: &str = "/storage/emulated/0";
 
 #[tauri::command]
 fn backup_scrivi(cartella: String, nome: String, contenuto: String, tieni: usize) -> Result<Vec<FileBackup>, String> {
@@ -203,6 +248,7 @@ fn backup_elenca(cartella: String, prefisso: String) -> Vec<FileBackup> {
 // La finestra dell'app non gestisce bene i download: il PDF arriva qui come
 // byte grezzi, l'operatore sceglie dove salvarlo («Salva con nome») e il file
 // si apre subito nel lettore PDF di Windows. None = salvataggio annullato.
+#[cfg(desktop)]
 #[tauri::command]
 async fn pdf_salva(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> Result<Option<String>, String> {
     let tauri::ipc::InvokeBody::Raw(dati) = request.body() else { return Err("contenuto del PDF mancante".into()) };
@@ -219,6 +265,48 @@ async fn pdf_salva(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> R
     let _ = app.opener().open_path(dest.to_string_lossy(), None::<&str>);
     Ok(Some(dest.to_string_lossy().to_string()))
 }
+// Android: niente «Salva con nome»; il PDF va nella cartella Download del
+// tablet, con un nome nuovo se ne esiste già uno uguale.
+#[cfg(mobile)]
+#[tauri::command]
+async fn pdf_salva(request: tauri::ipc::Request<'_>) -> Result<Option<String>, String> {
+    let tauri::ipc::InvokeBody::Raw(dati) = request.body() else { return Err("contenuto del PDF mancante".into()) };
+    if !dati.starts_with(b"%PDF") { return Err("il file generato non è un PDF".into()); }
+    let nome = request.headers().get("x-nome").and_then(|v| v.to_str().ok()).unwrap_or("documento.pdf");
+    salva_in_download(nome, "pdf", dati).map(Some)
+}
+
+// File scaricati dall'app su Android (backup, esportazioni CSV/JSON): la
+// finestra dell'app non sa scaricare, quindi il file arriva qui e va in Download.
+#[tauri::command]
+async fn file_salva(request: tauri::ipc::Request<'_>) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(dati) = request.body() else { return Err("contenuto del file mancante".into()) };
+    let nome = request.headers().get("x-nome").and_then(|v| v.to_str().ok()).unwrap_or("file.json");
+    let est = percent_decode(nome).rsplit('.').next().unwrap_or("").to_lowercase();
+    if !["json", "csv", "pdf", "txt"].contains(&est.as_str()) { return Err("tipo di file non ammesso".into()); }
+    salva_in_download(nome, &est, dati)
+}
+
+fn salva_in_download(nome: &str, est: &str, dati: &[u8]) -> Result<String, String> {
+    #[cfg(mobile)]
+    let dir = std::path::PathBuf::from(CARTELLA_TABLET).join("Download");
+    #[cfg(desktop)]
+    let dir = std::env::temp_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let pulito: String = percent_decode(nome).chars()
+        .map(|c| if c.is_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ' ' || c == '(' || c == ')' { c } else { '_' })
+        .take(120).collect();
+    let fine = format!(".{est}");
+    let l = pulito.len();
+    let ha_est = l >= fine.len() && pulito.is_char_boundary(l - fine.len()) && pulito[l - fine.len()..].eq_ignore_ascii_case(&fine);
+    let base = if ha_est { pulito[..l - fine.len()].to_string() } else { pulito };
+    let mut dest = dir.join(format!("{base}{fine}"));
+    let mut n = 2;
+    while dest.exists() && n < 1000 { dest = dir.join(format!("{base} ({n}){fine}")); n += 1; }
+    std::fs::write(&dest, dati).map_err(|e| format!("impossibile salvare il file: {e}"))?;
+    Ok(dest.to_string_lossy().to_string())
+}
+
 fn percent_decode(s: &str) -> String {
     let b = s.as_bytes();
     let mut out = Vec::with_capacity(b.len());
@@ -243,12 +331,14 @@ fn percent_decode(s: &str) -> String {
 //     l'app. L'installer è verificato con la chiave pubblica di
 //     tauri.conf.json: l'app accetta solo versioni firmate da MED System.
 // I dati dello studio (cartella %APPDATA%) non vengono toccati.
+#[cfg(desktop)]
 #[derive(Default)]
 struct AggiornamentoPronto(std::sync::Mutex<Option<(tauri_plugin_updater::Update, Vec<u8>)>>);
 
 #[derive(serde::Serialize)]
 struct InfoAggiornamento { versione: String, attuale: String }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn aggiornamento_scarica(app: tauri::AppHandle) -> Result<Option<InfoAggiornamento>, String> {
     use tauri_plugin_updater::UpdaterExt;
@@ -261,6 +351,7 @@ async fn aggiornamento_scarica(app: tauri::AppHandle) -> Result<Option<InfoAggio
     Ok(Some(info))
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn aggiornamento_installa(app: tauri::AppHandle) -> Result<(), String> {
     let pronto = app.state::<AggiornamentoPronto>().0.lock().map_err(|e| e.to_string())?.take();
@@ -269,12 +360,25 @@ fn aggiornamento_installa(app: tauri::AppHandle) -> Result<(), String> {
     app.restart();
 }
 
+// Android: l'aggiornamento automatico dal portale non c'è (si installa il
+// nuovo .apk); l'app risponde «già aggiornata».
+#[cfg(mobile)]
+#[tauri::command]
+async fn aggiornamento_scarica() -> Result<Option<InfoAggiornamento>, String> { Ok(None) }
+#[cfg(mobile)]
+#[tauri::command]
+fn aggiornamento_installa() -> Result<(), String> {
+    Err("sul tablet si aggiorna installando il nuovo file .apk".into())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_dialog::init());
+    #[cfg(desktop)]
+    let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AggiornamentoPronto::default())
         // Versione nel titolo della finestra: «MED System Gineco · v1.7.8»
@@ -284,10 +388,11 @@ pub fn run() {
                 let _ = finestra.set_title(&format!("{} · v{}", nome, app.package_info().version));
             }
             Ok(())
-        })
+        });
+    builder
         .invoke_handler(tauri::generate_handler![
             chiave_db_leggi, chiave_db_salva, segreto_leggi, segreto_salva,
-            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva,
+            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva, file_salva,
             aggiornamento_scarica, aggiornamento_installa
         ])
         .run(tauri::generate_context!())

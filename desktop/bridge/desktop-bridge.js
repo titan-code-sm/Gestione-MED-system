@@ -25,6 +25,10 @@
   const STORICO_MAX = 30;
 
   document.documentElement.dataset.gsDesktop = '1';
+  // Stessa app anche su tablet Android: lì la finestra non sa scaricare file,
+  // aprire PDF né stampare, quindi file e PDF vanno nella cartella Download.
+  const ANDROID = /Android/i.test(navigator.userAgent);
+  if(ANDROID) document.documentElement.dataset.gsAndroid = '1';
 
   // ── Cifratura ──
   const PREFISSO = 'enc1:';
@@ -237,7 +241,9 @@
     };
     fr.addEventListener('load', aggancia);
     ov.querySelector('.gsd-chiudi').onclick = chiudi;
-    ov.querySelector('.gsd-stampa').onclick = ()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ console.warn(e); } };
+    ov.querySelector('.gsd-stampa').onclick = ANDROID ? ()=>{
+      if(typeof gsToast==='function') gsToast('🖨️ Sul tablet si stampa dal PDF: usa il pulsante «PDF» e apri il file dalla cartella Download','gs-error');
+    } : ()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ console.warn(e); } };
     if(src) fr.src = src;
     aggancia();
     return fr.contentWindow;
@@ -269,6 +275,11 @@
     e.preventDefault();
     e.stopPropagation();
     if(web) window.open(href);
+    else if(ANDROID && /\.pdf(\?|#|$)/i.test(href)){
+      const nome = decodeURIComponent(href.split(/[?#]/)[0].split('/').pop() || 'documento.pdf');
+      fetch(new URL(href, location.href).href).then(r=>r.blob()).then(b=>salvaSulTablet(b, nome))
+        .catch(err=>{ if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: '+(err && err.message || err),'gs-error'); });
+    }
     else apriPannello(new URL(href, location.href).href, a.textContent.replace(/^\W+/, '').trim());
   }, true);
   // PDF generati dall'app (referto, cartella): la finestra non gestisce i
@@ -287,10 +298,44 @@
     }
   };
   window.gsApriBlob = function(blob){
+    if(ANDROID && /pdf/i.test(blob.type||'')){ salvaSulTablet(blob, 'allegato.pdf'); return; }
     const url = URL.createObjectURL(blob);
     apriPannello(url, 'Allegato');
     setTimeout(()=>URL.revokeObjectURL(url), 10*60*1000);
   };
+
+  // ── Tablet Android: file scaricati dall'app → cartella Download ──
+  async function salvaSulTablet(blob, nome){
+    try{
+      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'file.json') } });
+      const breve = String(percorso).split('/').pop();
+      if(typeof gsToast==='function') gsToast('💾 Salvato nella cartella Download del tablet: ' + breve, 'gs-success');
+      return true;
+    }catch(e){
+      console.error('Salvataggio file:', e);
+      if(typeof gsToast==='function') gsToast('⚠️ File non salvato: ' + (e && e.message || e), 'gs-error');
+      return false;
+    }
+  }
+  if(ANDROID){
+    window.gsSalvaFile = function(blob, nome){ return salvaSulTablet(blob, nome); };
+    // L'app scarica creando un link <a download> e cliccandolo: qui il file
+    // passa invece al tablet. Il link blob: viene liberato subito dopo il clic,
+    // quindi lo si tiene vivo ancora un minuto per poterlo leggere.
+    const revocaOriginale = URL.revokeObjectURL.bind(URL);
+    URL.revokeObjectURL = u => setTimeout(()=>revocaOriginale(u), 60000);
+    const clicOriginale = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function(){
+      const href = this.href || '';
+      if(this.hasAttribute('download') && /^(blob|data):/i.test(href)){
+        const nome = this.getAttribute('download') || 'file.json';
+        fetch(href).then(r=>r.blob()).then(b=>salvaSulTablet(b, nome))
+          .catch(e=>{ if(typeof gsToast==='function') gsToast('⚠️ File non salvato: '+(e && e.message || e),'gs-error'); });
+        return;
+      }
+      return clicOriginale.call(this);
+    };
+  }
 
   // ── Archiviazione → scheda "Database interno" ──
   const gsDesktop = window.gsDesktop = {
