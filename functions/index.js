@@ -40,10 +40,26 @@ const auth = getAuth();
 const ADMIN_EMAIL = "titancodesm@gmail.com";
 const REGIONE = "europe-west1";
 
-// Account Gmail dello studio da cui partono le email alle pazienti. EMAIL_PASS
-// è una "password per le app" di Google (16 caratteri), MAI la password vera.
-const EMAIL_USER = defineSecret("EMAIL_USER");
+// Tutte le email (programma ai medici, email alle pazienti) partono sempre da
+// questo account Gmail. EMAIL_PASS è la sua "password per le app" di Google
+// (16 caratteri), MAI la password vera.
+const MITTENTE = "medsystem.comunicazioni@gmail.com";
 const EMAIL_PASS = defineSecret("EMAIL_PASS");
+
+function postino() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: MITTENTE, pass: EMAIL_PASS.value().replace(/\s+/g, "") },
+  });
+}
+// Messaggio comprensibile quando Gmail rifiuta l'invio.
+function spiegaErroreEmail(e) {
+  const m = String((e && e.message) || e || "");
+  if ((e && e.code === "EAUTH") || /535|Username and Password not accepted|Invalid login/i.test(m)) {
+    return `Gmail non accetta la password per le app di ${MITTENTE}: va rigenerata e salvata come EMAIL_PASS.`;
+  }
+  return m.slice(0, 160);
+}
 
 function soloAmministratore(request) {
   if (!request.auth || request.auth.token.email !== ADMIN_EMAIL) {
@@ -177,10 +193,10 @@ function piuRecente(...date) {
 // è grande. L'email contiene il link all'ultima release pubblicata su GitHub,
 // scelta in base alla versione dell'app (modello) dell'account.
 // Le release si pubblicano in Gestione-MED-system; quelle fino alla 1.7.x
-// stanno ancora in Med-System-DEMO (ex GynoSistem): si usa la prima che contiene installer.
+// stanno ancora nel repository del sito demo (GynoSistem): si usa la prima che contiene installer.
 const RELEASE_API = [
   "https://api.github.com/repos/titan-code-sm/Gestione-MED-system/releases/latest",
-  "https://api.github.com/repos/titan-code-sm/Med-System-DEMO/releases/latest",
+  "https://api.github.com/repos/titan-code-sm/GynoSistem/releases/latest",
 ];
 const NOMI_MODELLO = { gineco: "MED System Gineco", proct: "MED System Proct", base: "MED System" };
 function modelloDelFile(nome) { return /proct/i.test(nome) ? "proct" : /gineco/i.test(nome) ? "gineco" : "base"; }
@@ -296,7 +312,7 @@ async function caricaPdfConsenso(d, da) {
   return { file, url: URL_PDF_CONSENSI + file };
 }
 
-exports.portaleUtenti = onCall({ secrets: [EMAIL_USER, EMAIL_PASS], region: REGIONE, timeoutSeconds: 60, memory: "256MiB" }, async (request) => {
+exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeoutSeconds: 60, memory: "256MiB" }, async (request) => {
   soloAmministratore(request);
   const d = request.data || {};
   const azione = d.azione;
@@ -546,13 +562,10 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_USER, EMAIL_PASS], region: REGI
       nomeApp: NOMI_MODELLO[modello], versione, link: file.browser_download_url,
       mb: (file.size / 1048576).toFixed(0), nota: testo(d.nota, 2000), password,
     });
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: EMAIL_USER.value().trim(), pass: EMAIL_PASS.value().replace(/\s+/g, "") },
-    });
+    const transporter = postino();
     try {
       await transporter.sendMail({
-        from: { name: "MED System", address: EMAIL_USER.value().trim() },
+        from: { name: "MED System", address: MITTENTE },
         to: u.email,
         replyTo: ADMIN_EMAIL,
         subject: `${NOMI_MODELLO[modello]} ${versione}: il programma da installare`,
@@ -561,7 +574,7 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_USER, EMAIL_PASS], region: REGI
       });
     } catch (e) {
       console.warn("Invio programma fallito:", e.message);
-      throw new HttpsError("internal", "Invio dell'email non riuscito: " + e.message.slice(0, 160));
+      throw new HttpsError("internal", "Invio dell'email non riuscito: " + spiegaErroreEmail(e));
     }
     const programmaInviato = { data: new Date().toISOString(), versione, modello, file: file.name, conPassword: !!password };
     await db.collection("utenti").doc(uid).set({ programmaInviato }, { merge: true });
@@ -637,7 +650,7 @@ exports.scaricaProgrammaDemo = onCall({ region: REGIONE, timeoutSeconds: 30, mem
 });
 
 exports.inviaEmail = onCall(
-  { secrets: [EMAIL_USER, EMAIL_PASS], region: REGIONE, timeoutSeconds: 300, memory: "256MiB" },
+  { secrets: [EMAIL_PASS], region: REGIONE, timeoutSeconds: 300, memory: "256MiB" },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Devi aver effettuato l'accesso per inviare email.");
@@ -703,16 +716,13 @@ exports.inviaEmail = onCall(
       console.warn("rate-limit email tx fallita:", e.message);
     }
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: EMAIL_USER.value().trim(), pass: EMAIL_PASS.value().replace(/\s+/g, "") },
-    });
+    const transporter = postino();
 
     const risultati = [];
     for (const x of dest) {
       try {
         await transporter.sendMail({
-          from: nomeMittente ? { name: nomeMittente, address: EMAIL_USER.value().trim() } : EMAIL_USER.value().trim(),
+          from: nomeMittente ? { name: nomeMittente, address: MITTENTE } : { name: "MED System", address: MITTENTE },
           to: x.email,
           ...(rispondiA ? { replyTo: rispondiA } : {}),
           subject: risolviPlaceholder(oggetto, x.nome),
@@ -721,7 +731,7 @@ exports.inviaEmail = onCall(
         risultati.push({ pazienteId: x.pazienteId, nome: x.nome, email: x.email, ok: true });
       } catch (e) {
         console.warn("Invio email fallito:", e.message);
-        risultati.push({ pazienteId: x.pazienteId, nome: x.nome, email: x.email, ok: false, errore: e.message.slice(0, 200) });
+        risultati.push({ pazienteId: x.pazienteId, nome: x.nome, email: x.email, ok: false, errore: spiegaErroreEmail(e) });
       }
     }
 
