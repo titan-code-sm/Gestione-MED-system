@@ -92,6 +92,9 @@ jobs:
           conf=()
           if [ "${{ matrix.modello }}" != "gineco" ]; then conf+=(--config src-tauri/tauri.${{ matrix.modello }}.conf.json); fi
           npx tauri android init --ci --skip-targets-install "${conf[@]}"
+          # Icona di MED System (senza, Android mostra quella predefinita di Tauri)
+          npx tauri icon ../app/logo.png
+          ls src-tauri/gen/android/app/src/main/res/mipmap-xxxhdpi/
           gen=src-tauri/gen/android/app/src/main
           # Android 10: senza questa voce l'app non può scrivere in Download/Documents
           sed -i 's#<application#<application android:requestLegacyExternalStorage="true"#' $gen/AndroidManifest.xml
