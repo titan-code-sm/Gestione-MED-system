@@ -98,6 +98,8 @@ jobs:
           gen=src-tauri/gen/android/app/src/main
           # Android 10: senza questa voce l'app non può scrivere in Download/Documents
           sed -i 's#<application#<application android:requestLegacyExternalStorage="true"#' $gen/AndroidManifest.xml
+          # Disinstallando, Android chiede se tenere i dati (pazienti e visite) invece di cancellarli
+          sed -i 's#<application#<application android:hasFragileUserData="true"#' $gen/AndroidManifest.xml
           # Stampa e apertura dei file (desktop/android): attività principale e FileProvider
           pacchetto=$(node -p "require('./src-tauri/tauri.' + ('${{ matrix.modello }}'==='gineco' ? '' : '${{ matrix.modello }}.') + 'conf.json').identifier")
           attivita=$(find $gen/java -name MainActivity.kt | head -1)
