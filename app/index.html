@@ -1037,7 +1037,7 @@ input.ob-settimane-big{font-size:1.5rem;font-weight:800;font-family:var(--font-s
       <img src="logo-medsystem.png" alt="MED System" class="login-logo">
     </div>
     <h1 class="sr-only">MED System</h1>
-    <div class="login-version" style="margin-bottom:22px;">Gineco · v15.0</div>
+    <div class="login-version" style="margin-bottom:22px;">Gineco</div>
     <form id="login-form" autocomplete="on" onsubmit="event.preventDefault();checkLogin();">
       <input type="email" id="login-email" name="email" class="login-input" placeholder="Email" autocomplete="username" style="margin-bottom:10px" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pass').focus();}">
       <div class="pass-wrap">
@@ -4146,7 +4146,11 @@ const GS_APP_FILE='MEDSystem'+(GS_APP_SPECIALITA?'_'+GS_APP_SPECIALITA:''); // p
   testo('.app-brand-spec', m.specialita);
   testo('.brand-role', m.ruolo);
   const lv=document.querySelector('#login-overlay .login-version');
-  if(lv) lv.textContent=(m.specialita?m.specialita+' · ':'')+'v15.0';
+  // Versione vera dell'app (era scritta fissa «v15.0», un vecchio numero interno)
+  if(lv){
+    lv.textContent=m.specialita||'';
+    try{ window.__TAURI__.app.getVersion().then(v=>{ lv.textContent=(m.specialita?m.specialita+' · ':'')+'v'+v; }).catch(()=>{}); }catch(e){}
+  }
   if(GS_MODELLO!=='gineco'){
     ['rxv-cfg-spec','bv-spec','set-print-spec'].forEach(id=>{ const el=document.getElementById(id); if(el) el.placeholder='es. Specialista in Cardiologia'; });
     // In Base "paziente" è al maschile/neutro, non solo al femminile
