@@ -234,6 +234,7 @@ function emailProgramma({ nome, genere, email, nomeApp, versione, link, mb, nota
       `   ${link}`,
       "2. Apri il file scaricato. Se il tablet chiede di consentire l'installazione da questa fonte, attivala e torna indietro.",
       "   Poi premi «Installa». Se compare un avviso di Play Protect, scegli «Installa comunque».",
+      "   Se MED System è già sul tablet NON disinstallarlo: installa sopra quello vecchio, così pazienti e visite restano. Disinstallando si cancellano.",
     ] : [
       "1. Scarica l'installer da questo link (Windows, " + mb + " MB):",
       `   ${link}`,
@@ -255,7 +256,7 @@ function emailProgramma({ nome, genere, email, nomeApp, versione, link, mb, nota
 <p style="margin:22px 0"><a href="${escHtml(link)}" style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">⬇ Scarica ${escHtml(nomeApp)}</a><br><span style="color:#64748b;font-size:13px">${android ? "Tablet Android: apri il link dal tablet" : "Windows"} · ${escHtml(mb)} MB</span></p>
 <ol style="padding-left:20px">
 ${android
-    ? "<li>Apri il file scaricato. Se il tablet chiede di consentire l'installazione da questa fonte, attivala e torna indietro, poi premi <b>Installa</b>. Se compare un avviso di Play Protect, scegli <b>Installa comunque</b>.</li>"
+    ? "<li>Apri il file scaricato. Se il tablet chiede di consentire l'installazione da questa fonte, attivala e torna indietro, poi premi <b>Installa</b>. Se compare un avviso di Play Protect, scegli <b>Installa comunque</b>.<br><b>Se MED System è già sul tablet non disinstallarlo</b>: installa sopra quello vecchio, così pazienti e visite restano (disinstallando si cancellano).</li>"
     : "<li>Apri il file scaricato e segui le istruzioni. Se Windows mostra «Windows ha protetto il PC», clicca <b>Ulteriori informazioni</b> e poi <b>Esegui comunque</b>.</li>"}
 <li>Apri MED System e accedi con il tuo account:<br>Email: <b>${escHtml(email)}</b>${password ? `<br>Password provvisoria: <b style="font-family:Consolas,monospace">${escHtml(password)}</b><br><span style="color:#64748b">Al primo accesso il programma ti chiederà di sceglierne una tua.</span>` : "<br><span style=\"color:#64748b\">La password è quella che usi già (o quella che ti è stata comunicata).</span>"}</li>
 </ol>

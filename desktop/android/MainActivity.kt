@@ -12,6 +12,7 @@
 //    portale. Scarica in sottofondo il nuovo .apk dalle release di MED System e
 //    poi apre l'installazione di Android (il medico preme «Aggiorna»). Android
 //    accetta l'aggiornamento solo se è firmato con la stessa chiave: i dati restano.
+//  - apriWeb(indirizzo): apre un link web (sito, PDF online) con il browser.
 package PACCHETTO
 
 import android.content.Context
@@ -31,6 +32,18 @@ import java.net.URL
 class MainActivity : TauriActivity() {
   override fun onWebViewCreate(webView: WebView) {
     super.onWebViewCreate(webView)
+    // Android 15+ disegna l'app anche sotto la barra di stato e quella dei
+    // pulsanti (indietro/home): la barra «Visita in corso» in fondo finiva
+    // sotto i pulsanti di Android e non si poteva toccare. Il contenuto resta
+    // tra le barre di sistema (e sopra la tastiera quando è aperta).
+    val contenuto = findViewById<android.view.View>(android.R.id.content)
+    androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(contenuto) { v, insets ->
+      val barre = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars() or androidx.core.view.WindowInsetsCompat.Type.displayCutout())
+      val tastiera = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime())
+      v.setPadding(barre.left, barre.top, barre.right, maxOf(barre.bottom, tastiera.bottom))
+      androidx.core.view.WindowInsetsCompat.CONSUMED
+    }
+    androidx.core.view.ViewCompat.requestApplyInsets(contenuto)
     webView.addJavascriptInterface(PonteMedSystem(this, webView), "MedSystemAndroid")
   }
 }
@@ -128,6 +141,19 @@ class PonteMedSystem(private val attivita: MainActivity, private val finestra: W
         .setDataAndType(uri, tipo.ifBlank { "application/octet-stream" })
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
       attivita.startActivity(Intent.createChooser(intento, "Apri con").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+      true
+    } catch (e: Exception) {
+      false
+    }
+  }
+
+  // Link web (siti, PDF online) dal tablet: li apre Android con l'app adatta.
+  @JavascriptInterface
+  fun apriWeb(indirizzo: String): Boolean {
+    if (!indirizzo.startsWith("https://") && !indirizzo.startsWith("http://") && !indirizzo.startsWith("mailto:") && !indirizzo.startsWith("tel:")) return false
+    return try {
+      val intento = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(indirizzo)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      attivita.startActivity(intento)
       true
     } catch (e: Exception) {
       false
