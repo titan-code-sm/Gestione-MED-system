@@ -437,6 +437,30 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
     return { file: q.docs.map((x) => ({ file: x.id, url: URL_PDF_CONSENSI + x.id, caricato: x.data().caricato || "" })) };
   }
 
+  // «Aggiorna» nel portale: l'app del medico (dalla 1.8.0) vede la richiesta nel
+  // suo profilo, scarica l'ultima versione pubblicata e si aggiorna. L'app
+  // risponde in aggiornamentoEsito (scaricato, errore); a lavoro finito la
+  // versioneApp diventa quella richiesta. annulla=true ritira la richiesta.
+  if (azione === "richiediAggiornamento") {
+    const uids = Array.isArray(d.uids) ? d.uids.filter((x) => typeof x === "string" && x).slice(0, 500) : (uid ? [uid] : []);
+    if (!uids.length) throw new HttpsError("invalid-argument", "Scegli almeno un medico.");
+    // Solo profili esistenti: creare un profilo vuoto abiliterebbe l'account.
+    const esistenti = (await db.getAll(...uids.map((x) => db.collection("utenti").doc(x)))).filter((s) => s.exists);
+    if (!esistenti.length) throw new HttpsError("not-found", "Account non abilitato.");
+    let modifica;
+    if (d.annulla === true) {
+      modifica = { aggiornamentoRichiesto: FieldValue.delete(), aggiornamentoEsito: FieldValue.delete() };
+    } else {
+      const versione = typeof d.versione === "string" && /^\d+\.\d+\.\d+$/.test(d.versione) ? d.versione : "";
+      if (!versione) throw new HttpsError("invalid-argument", "Versione non valida.");
+      modifica = { aggiornamentoRichiesto: { versione, quando: new Date().toISOString() }, aggiornamentoEsito: FieldValue.delete() };
+    }
+    const batch = db.batch();
+    esistenti.forEach((s) => batch.update(s.ref, modifica));
+    await batch.commit();
+    return { ok: true, n: esistenti.length };
+  }
+
   if (!uid) throw new HttpsError("invalid-argument", "Account non specificato.");
 
   if (azione === "stato") {
@@ -465,30 +489,6 @@ exports.portaleUtenti = onCall({ secrets: [EMAIL_PASS], region: REGIONE, timeout
     if (modifiche.nome) await auth.updateUser(uid, { displayName: modifiche.nome });
     await db.collection("utenti").doc(uid).set(modifiche, { merge: true });
     return { ok: true };
-  }
-
-  // «Aggiorna» nel portale: l'app del medico (dalla 1.8.0) vede la richiesta nel
-  // suo profilo, scarica l'ultima versione pubblicata e si aggiorna. L'app
-  // risponde in aggiornamentoEsito (scaricato, errore); a lavoro finito la
-  // versioneApp diventa quella richiesta. annulla=true ritira la richiesta.
-  if (azione === "richiediAggiornamento") {
-    const uids = Array.isArray(d.uids) ? d.uids.filter((x) => typeof x === "string" && x).slice(0, 500) : (uid ? [uid] : []);
-    if (!uids.length) throw new HttpsError("invalid-argument", "Scegli almeno un medico.");
-    // Solo profili esistenti: creare un profilo vuoto abiliterebbe l'account.
-    const esistenti = (await db.getAll(...uids.map((x) => db.collection("utenti").doc(x)))).filter((s) => s.exists);
-    if (!esistenti.length) throw new HttpsError("not-found", "Account non abilitato.");
-    let modifica;
-    if (d.annulla === true) {
-      modifica = { aggiornamentoRichiesto: FieldValue.delete(), aggiornamentoEsito: FieldValue.delete() };
-    } else {
-      const versione = typeof d.versione === "string" && /^\d+\.\d+\.\d+$/.test(d.versione) ? d.versione : "";
-      if (!versione) throw new HttpsError("invalid-argument", "Versione non valida.");
-      modifica = { aggiornamentoRichiesto: { versione, quando: new Date().toISOString() }, aggiornamentoEsito: FieldValue.delete() };
-    }
-    const batch = db.batch();
-    esistenti.forEach((s) => batch.update(s.ref, modifica));
-    await batch.commit();
-    return { ok: true, n: esistenti.length };
   }
 
   if (azione === "licenza") {
