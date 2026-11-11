@@ -14763,6 +14763,46 @@ function gsToast(msg, cls='gs-info') {
   tc.appendChild(t);
   setTimeout(() => t.remove(), 3800);
 }
+
+// Tablet: per la data di nascita il calendario di Android costringe a scorrere
+// anno per anno. Lì al suo posto si scrive la data con la tastiera numerica
+// (gg/mm/aaaa, le barre si mettono da sole). Il campo originale resta, nascosto,
+// con il valore aaaa-mm-gg che usa il resto del programma.
+function gsDataScrivibile(id){
+  const orig = document.getElementById(id);
+  if(!orig || orig.dataset.scrivibile) return;
+  orig.dataset.scrivibile = '1';
+  const t = document.createElement('input');
+  t.type = 'text'; t.inputMode = 'numeric'; t.placeholder = 'gg/mm/aaaa'; t.maxLength = 10;
+  t.autocomplete = 'off'; t.className = orig.className; t.id = id + '-testo';
+  const d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  const daIso = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v||'') ? v.slice(8,10)+'/'+v.slice(5,7)+'/'+v.slice(0,4) : '';
+  Object.defineProperty(orig, 'value', {
+    configurable: true,
+    get(){ return d.get.call(this); },
+    set(v){ d.set.call(this, v); t.value = daIso(d.get.call(this)); t.style.borderColor = ''; }
+  });
+  t.value = daIso(d.get.call(orig));
+  t.addEventListener('input', () => {
+    let c = t.value.replace(/\D/g,'').slice(0,8);
+    t.value = c.length>4 ? c.slice(0,2)+'/'+c.slice(2,4)+'/'+c.slice(4) : c.length>2 ? c.slice(0,2)+'/'+c.slice(2) : c;
+    let iso = '';
+    if(c.length===8){
+      const g=+c.slice(0,2), m=+c.slice(2,4), a=+c.slice(4);
+      const dt = new Date(a, m-1, g);
+      if(a>1900 && dt.getFullYear()===a && dt.getMonth()===m-1 && dt.getDate()===g) iso = c.slice(4)+'-'+c.slice(2,4)+'-'+c.slice(0,2);
+    }
+    d.set.call(orig, iso);
+    t.style.borderColor = (c.length===8 && !iso) ? 'var(--red,#c0392b)' : '';
+    orig.dispatchEvent(new Event('input', {bubbles:true}));
+    orig.dispatchEvent(new Event('change', {bubbles:true}));
+  });
+  orig.style.display = 'none';
+  orig.insertAdjacentElement('afterend', t);
+}
+if(/Android/i.test(navigator.userAgent)){
+  document.addEventListener('DOMContentLoaded', () => ['n-nascita','e-nascita','stev-nascita'].forEach(gsDataScrivibile));
+}
 </script>
 </body>
 </html>
