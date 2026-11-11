@@ -258,6 +258,11 @@
     const u = url==null ? '' : String(url).trim();
     if(!u || u==='about:blank' || /^(blob|data):/i.test(u)) return apriPannello(u && u!=='about:blank' ? u : '');
     const assoluto = /^[a-z][a-z0-9+.-]*:/i.test(u) ? u : new URL(u, BASE_WEB).href;
+    // Tablet: il link lo apre Android (browser o app adatta) con un Intent
+    if(ANDROID && NATIVO && NATIVO.apriWeb){
+      let ok = false; try{ ok = !!NATIVO.apriWeb(assoluto); }catch(e){ console.warn(e); }
+      if(ok) return { closed:false, close(){}, focus(){} };
+    }
     invoke('plugin:opener|open_url', { url: assoluto }).catch(e=>{
       console.warn('Apertura link esterno:', e);
       if(typeof gsToast==='function') gsToast('⚠️ Impossibile aprire il link nel browser','gs-error');
@@ -277,12 +282,20 @@
     if(!web && a.target!=='_blank') return;
     e.preventDefault();
     e.stopPropagation();
-    if(web) window.open(href);
-    else if(ANDROID && /\.pdf(\?|#|$)/i.test(href)){
+    // Tablet: i PDF (inclusi nell'app o allegati dal portale, online) si
+    // scaricano e si aprono con il lettore PDF del tablet.
+    if(ANDROID && /^(https?:|(?![a-z][a-z0-9+.-]*:))/i.test(href) && /\.pdf(\?|#|$)/i.test(href)){
       const nome = decodeURIComponent(href.split(/[?#]/)[0].split('/').pop() || 'documento.pdf');
-      fetch(new URL(href, location.href).href).then(r=>r.blob()).then(b=>apriSulTablet(b, nome))
-        .catch(err=>{ if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: '+(err && err.message || err),'gs-error'); });
+      if(typeof gsToast==='function' && web) gsToast('⬇️ Apro il PDF…', 'gs-info');
+      fetch(new URL(href, location.href).href).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.blob(); })
+        .then(b=>apriSulTablet(b.type ? b : new Blob([b], {type:'application/pdf'}), nome))
+        .catch(err=>{
+          console.warn('PDF:', err);
+          if(web) window.open(href);
+          else if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: '+(err && err.message || err),'gs-error');
+        });
     }
+    else if(web) window.open(href);
     else apriPannello(new URL(href, location.href).href, a.textContent.replace(/^\W+/, '').trim());
   }, true);
   // PDF generati dall'app (referto, cartella): la finestra non gestisce i
