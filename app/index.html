@@ -1108,6 +1108,30 @@ label.form-label{font-weight:550;}
 @keyframes gsGira{to{transform:rotate(360deg)}}
 .opts-popover{animation-duration:.16s;}
 
+/* Dashboard: fascia «Oggi» */
+.dash-oggi{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;margin-bottom:24px;align-items:start;}
+.dash-oggi.con-scaduti{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);}
+.dash-rapidi{display:flex;gap:8px;flex-wrap:wrap;}
+.oggi-riga{display:flex;align-items:center;gap:14px;padding:10px 4px;border-top:1px solid var(--separator);min-height:52px;}
+.oggi-riga:first-child{border-top:none;}
+.oggi-ora{font-weight:650;font-variant-numeric:tabular-nums;color:var(--primary);min-width:48px;}
+.oggi-nome{font-weight:600;color:var(--label);}
+.oggi-nome[onclick]:hover{text-decoration:underline;}
+.oggi-tipo{color:var(--label4);font-size:.82rem;flex:1;text-transform:capitalize;}
+.oggi-riga.fatto .oggi-ora,.oggi-riga.fatto .oggi-nome{color:var(--label4);}
+.oggi-vuoto{color:var(--label4);font-size:.88rem;padding:14px 4px 4px;border-top:1px solid var(--separator);}
+#overdue-alert-banner .gs-avviso-riga{font-size:.86rem;}
+.cal-day{min-height:78px;}
+@media(max-width:1150px){ .dash-oggi.con-scaduti{grid-template-columns:minmax(0,1fr);} }
+
+/* Menu: «Nuova paziente» in evidenza, voci raggruppate, impostazioni in fondo */
+.nav-nuova-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 10px 0;min-height:40px;padding:8px 12px;border:none;border-radius:var(--radius-sm);background:var(--primary);color:var(--on-primary);font-family:var(--font);font-size:.88rem;font-weight:600;cursor:pointer;transition:filter .15s,transform .1s;}
+.nav-nuova-btn:hover{filter:brightness(.93);}
+.nav-nuova-btn:active{transform:scale(.98);}
+.nav-nuova-btn .nav-icon{color:inherit;}
+.nav-group{margin-bottom:16px;}
+.opts-item.active,.opts-trigger.active{color:var(--primary);background:var(--primary-dim);}
+
 /* Menu a sole icone: tablet in verticale e finestre strette */
 @media(min-width:769px) and (max-width:1000px){
   aside{width:72px;}
@@ -1117,7 +1141,9 @@ label.form-label{font-weight:550;}
   .fb-status-bar{justify-content:center;padding:4px 0 8px;}
   .cerca-rapida-btn{margin:6px 12px 0;justify-content:center;padding:8px 0;}
   nav{padding:10px 12px;}
-  nav button{font-size:0;justify-content:center;padding:0;min-height:46px;gap:0;}
+  nav button,.nav-nuova-btn{font-size:0;justify-content:center;padding:0;min-height:46px;gap:0;}
+  .nav-nuova-btn{margin:8px 12px 0;}
+  .nav-nuova-btn .nav-icon .ic{width:22px;height:22px;}
   nav button .nav-icon{font-size:1.2rem;}
   nav button .nav-icon .ic{width:22px;height:22px;}
   .nav-badge{position:absolute;top:4px;right:4px;font-size:.6rem;padding:1px 5px;}
@@ -1244,14 +1270,19 @@ label.form-label{font-weight:550;}
     <span>🔍</span><span class="cerca-rapida-txt">Cerca paziente</span><kbd>Ctrl K</kbd>
   </button>
 
+  <!-- «Nuova paziente»: l'azione più usata, in evidenza fuori dall'elenco -->
+  <button class="nav-nuova-btn" onclick="naviga('nuova')" id="nav-nuova"><span class="nav-icon">➕</span>Nuova Paziente</button>
+
   <nav>
     <div class="nav-group" id="nav-group-principale">
-      <div class="nav-group-label">Principale</div>
+      <div class="nav-group-label">Lavoro</div>
       <button onclick="naviga('home')" id="nav-home" class="active"><span class="nav-icon">🏠</span>Dashboard</button>
-      <button onclick="naviga('archivio')" id="nav-archivio"><span class="nav-icon">👩‍⚕️</span>Pazienti</button>
-      <button onclick="naviga('storico-date')" id="nav-storico-date"><span class="nav-icon">🕘</span>Storico Visite</button>
+      <button onclick="naviga('archivio')" id="nav-archivio"><span class="nav-icon">👥</span>Pazienti</button>
       <button onclick="naviga('appuntamenti')" id="nav-appuntamenti"><span class="nav-icon">📅</span>Appuntamenti</button>
-      <button onclick="naviga('nuova')" id="nav-nuova"><span class="nav-icon">➕</span>Nuova Paziente</button>
+      <button onclick="naviga('storico-date')" id="nav-storico-date"><span class="nav-icon">🕘</span>Storico Visite</button>
+    </div>
+    <div class="nav-group" id="nav-group-documenti">
+      <div class="nav-group-label">Documenti</div>
       <button onclick="naviga('ricettario')" id="nav-ricettario"><span class="nav-icon">🧾</span>Ricettario</button>
       <button onclick="naviga('consensi')" id="nav-consensi"><span class="nav-icon">✍️</span>Consensi</button>
       <button onclick="naviga('email')" id="nav-email"><span class="nav-icon">📧</span>Email</button>
@@ -1262,7 +1293,6 @@ label.form-label{font-weight:550;}
       <button onclick="naviga('farmacia')" id="nav-farmacia" data-modelli="gineco"><span class="nav-icon">💊</span>Farmacia</button>
       <button onclick="naviga('utility')" id="nav-utility"><span class="nav-icon">🧮</span>Utility</button>
       <button onclick="naviga('backup')" id="nav-backup"><span class="nav-icon">🗄️</span>Archiviazione</button>
-      <button onclick="naviga('impostazioni')" id="nav-impostazioni"><span class="nav-icon">⚙️</span>Impostazioni</button>
     </div>
     <div class="nav-group" id="nav-group-admin" style="display:none">
       <div class="nav-group-label">Amministrazione</div>
@@ -1274,8 +1304,8 @@ label.form-label{font-weight:550;}
   <div class="sidebar-footer-new">
     <!-- Popover menu -->
     <div class="opts-popover" id="opts-popover">
-      <button class="opts-item" onclick="naviga('appuntamenti');closeOpts()">
-        <span class="oi">🗓️</span>Vedi Appuntamenti
+      <button class="opts-item" onclick="naviga('impostazioni');closeOpts()" id="nav-impostazioni">
+        <span class="oi">⚙️</span>Impostazioni
       </button>
       <div class="opts-divider"></div>
       <button class="opts-item" onclick="closeOpts();bloccaApp()">
@@ -1309,7 +1339,7 @@ label.form-label{font-weight:550;}
     <!-- Trigger button -->
     <button class="opts-trigger" id="opts-trigger" onclick="toggleOpts()">
       <span class="ot-icon">⚙️</span>
-      Opzioni
+      Impostazioni e altro
       <span class="ot-arrow">‹</span>
     </button>
     <input type="file" id="file-upload" accept=".json,application/json" style="display:none" onchange="restoreData(this)">
@@ -1376,13 +1406,28 @@ label.form-label{font-weight:550;}
     </div>
   </div>
 
-  <!-- Alert promemoria scaduti: visibile solo se ce ne sono, un solo colpo d'occhio -->
-  <div id="overdue-alert-banner" class="gs-avviso gs-avviso-rosso" style="display:none;padding:16px 18px;margin-bottom:20px;">
+  <!-- Fascia «Oggi»: gli appuntamenti della giornata con i tasti rapidi e, di
+       fianco, i promemoria scaduti (solo se ce ne sono). -->
+  <div class="dash-oggi" id="dash-oggi">
+  <div class="card dash-oggi-agenda">
+    <div class="card-header" style="flex-wrap:wrap;gap:12px;">
+      <div><div class="card-title">Oggi</div><div class="card-subtitle" id="oggi-sottotitolo"></div></div>
+      <div class="dash-rapidi">
+        <button class="btn btn-primary" onclick="nuovaVisitaRapida()">🩺 Nuova visita</button>
+        <button class="btn btn-ghost" onclick="naviga('nuova')">➕ Nuova paziente</button>
+        <button class="btn btn-ghost" onclick="apriNuovaPrenotazioneGS()">📅 Appuntamento</button>
+        <button class="btn btn-ghost" onclick="apriCercaRapida()">🔍 Cerca</button>
+      </div>
+    </div>
+    <div id="oggi-lista"></div>
+  </div>
+  <div id="overdue-alert-banner" class="gs-avviso gs-avviso-rosso" style="display:none;padding:16px 18px;">
     <div class="gs-avviso-titolo" style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:0.95rem;margin-bottom:10px;">
       <span style="font-size:1.05rem;">⚠️</span>
       <span id="overdue-alert-title">Promemoria scaduti</span>
     </div>
     <div id="overdue-alert-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
   </div>
 
   <div id="dash-widgets">
@@ -1451,7 +1496,7 @@ label.form-label{font-weight:550;}
           <div class="stat-label">Promemoria Attivi</div>
           <div class="stat-trend trend-neutral">📌 Da verificare</div>
         </div>
-        <div class="stat-card" onclick="naviga('storico-date');apriGiornata(new Date().toISOString().split('T')[0])" title="Vai alle visite di oggi">
+        <div class="stat-card" onclick="naviga('storico-date');apriGiornata(gsOggi())" title="Vai alle visite di oggi">
           <div class="stat-icon" style="background:rgba(175,82,222,0.12);">📆</div>
           <div class="stat-value" id="stat-oggi">0</div>
           <div class="stat-label">Visite Oggi</div>
@@ -4270,6 +4315,12 @@ const GS_MODELLI={
   proct:{ nome:'Proctologia', specialita:'Proct', ruolo:'Proctologia',
     spec:'Specialista in Chirurgia – Proctologia', dati:'demo-proct.json' }
 };
+// Data di OGGI (e di una data qualsiasi) secondo l'orologio del computer, in
+// formato aaaa-mm-gg. Prima si usava toISOString(), che ragiona sull'ora di
+// Greenwich: tra mezzanotte e le 1-2 di notte dava il giorno prima, e un
+// «prossimo controllo 15/07/2026» creava il promemoria per il 14.
+function gsDataLocale(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function gsOggi(){ return gsDataLocale(new Date()); }
 const GS_MODELLO=(()=>{
   let m=window.GS_MODELLO_APP;
   if(!m && GS_SITO_DEMO){ try{ m=localStorage.getItem('gs_modello_demo'); }catch(e){} }
@@ -5967,13 +6018,13 @@ function calcolaSettimaneGravidanza(p, gravidanzaId, dataRif, extra){
 function dataVisitaEditor(){
   const v=document.getElementById('editor-data-visita')?.value;
   if(!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-  return v>new Date().toISOString().split('T')[0] ? null : v;
+  return v>gsOggi() ? null : v;
 }
 function cambiaDataVisitaEditor(){
   const el=document.getElementById('editor-data-visita');
   if(el && el.value && !dataVisitaEditor()){
     if(typeof gsToast==='function') gsToast('La data della visita non può essere nel futuro','gs-error');
-    el.value=new Date().toISOString().split('T')[0];
+    el.value=gsOggi();
   }
   if(curMode==='ob') ricalcolaSettimaneOb(true); // settimane di gestazione alla data della visita
 }
@@ -7382,7 +7433,7 @@ function _controllaLicenza(d, user){
     return {blocco:`Questo account è abilitato a ${nomeApp}, non a questa versione del programma. Contatta l'amministratore.`};
   }
   if(_PIANI_CON_SCADENZA.includes(d.piano) && d.scadenza){
-    const oggi=new Date().toISOString().slice(0,10);
+    const oggi=gsOggi();
     const dataIt=new Date(d.scadenza+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
     const cosa = d.piano==='prova' ? 'Il periodo di prova' : 'L\'abbonamento';
     if(d.scadenza < oggi) return {blocco:`${cosa} è scaduto il ${dataIt}. Per continuare a usare MED System contatta l'amministratore. I tuoi dati restano su questo PC.`};
@@ -7404,7 +7455,7 @@ function _statoAbbonamento(a){
   const nome = GS_PIANI_NOME[a.piano] || a.piano;
   if(!_PIANI_CON_SCADENZA.includes(a.piano) || !a.scadenza)
     return {etichetta:nome, classe:'', testo:'Attivo, senza scadenza', badge:'badge-green'};
-  const oggi=new Date().toISOString().slice(0,10);
+  const oggi=gsOggi();
   const giorni=Math.round((new Date(a.scadenza)-new Date(oggi))/86400000);
   if(giorni<0) return {etichetta:nome+' · scaduto', classe:'scaduto', testo:'Scaduto il '+_dataIt(a.scadenza), badge:'badge-red', giorni};
   const tra = giorni===0 ? 'oggi' : 'tra '+giorni+' giorn'+(giorni===1?'o':'i');
@@ -7718,6 +7769,7 @@ async function proceedAfterLogin(){
   // dei medici (regole Firestore + chiave localStorage per utente).
   if(navPrincipale) navPrincipale.style.display='';
   if(navStrumenti) navStrumenti.style.display='';
+  const navDocumenti=document.getElementById('nav-group-documenti'); if(navDocumenti) navDocumenti.style.display='';
   applyFeatureFlags(); // nasconde le voci di menu disattivate da Impostazioni → Funzionalità
 
   if(gsDemoMode){
@@ -7827,7 +7879,8 @@ function naviga(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   const s=document.getElementById('sec-'+id);
   if(s) s.classList.add('active');
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('nav button, #nav-nuova, #nav-impostazioni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('opts-trigger')?.classList.toggle('active', id==='impostazioni');
   const b=document.getElementById('nav-'+id);
   if(b) b.classList.add('active');
   // Render sezione
@@ -8111,7 +8164,7 @@ async function avviaSitoDemo(){
     // Dati con "dataRiferimento": le date si spostano in avanti fino a oggi,
     // così la demo mostra sempre visite recenti e appuntamenti in arrivo.
     if(dati.dataRiferimento){
-      const giorni=Math.round((new Date(new Date().toISOString().slice(0,10))-new Date(dati.dataRiferimento))/86400000);
+      const giorni=Math.round((new Date(gsOggi())-new Date(dati.dataRiferimento))/86400000);
       const sposta=o=>{ if(o && o.data){ const d=new Date(o.data+'T12:00:00'); d.setDate(d.getDate()+giorni); o.data=d.toISOString().slice(0,10); } };
       if(giorni){
         (dati.pazienti||[]).forEach(p=>{ (p.visite||[]).forEach(sposta); (p.alerts||[]).forEach(sposta); });
@@ -8260,10 +8313,11 @@ function renderDashboard(){
   animaStatValue('stat-paz', DB.pazienti.length);
   animaStatValue('stat-visite', totalVisite);
   animaStatValue('stat-alert', totalAlert);
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   let visitOggi=0;
   DB.pazienti.forEach(p=>(p.visite||[]).forEach(v=>{if(v.data===oggi)visitOggi++;}));
   animaStatValue('stat-oggi', visitOggi);
+  renderOggi(visitOggi);
   renderAlertsHome();
   renderPromemoriaHome();
   renderPromemoriaScaduti();
@@ -8271,11 +8325,42 @@ function renderDashboard(){
 
 // Widget "Appuntamenti": SOLO le visite/prenotazioni delle pazienti,
 // niente promemoria — quelli hanno il loro widget dedicato (renderPromemoriaHome).
+// Fascia «Oggi» della Dashboard: appuntamenti della giornata in ordine di ora.
+// Il nome apre la cartella, «Visita» apre la cartella e la scelta del tipo.
+function renderOggi(visiteFatte){
+  const lista=document.getElementById('oggi-lista'), sub=document.getElementById('oggi-sottotitolo');
+  if(!lista||!sub) return;
+  const oggi=gsOggi();
+  const appt=(GS_APPTS||[]).filter(a=>a.data===oggi && a.stato!=='cancellato').sort((x,y)=>(x.ora||'').localeCompare(y.ora||''));
+  const giorno=new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+  sub.textContent=`${giorno} · ${appt.length} appuntament${appt.length===1?'o':'i'} · ${visiteFatte||0} visit${visiteFatte===1?'a':'e'} registrat${visiteFatte===1?'a':'e'}`;
+  if(!appt.length){ lista.innerHTML='<div class="oggi-vuoto">Nessun appuntamento per oggi.</div>'; return; }
+  lista.innerHTML=appt.map(a=>{
+    const localId=trovaPazienteLocaleId(a.pazienteId);
+    const fatto=a.stato==='completato';
+    return `<div class="oggi-riga${fatto?' fatto':''}">
+      <span class="oggi-ora">${_escHtml(a.ora||'—')}</span>
+      <span class="oggi-nome"${localId?` onclick="openPaziente(${localId})" style="cursor:pointer"`:''}>${_escHtml(a.pazienteNome||'–')}</span>
+      <span class="oggi-tipo">${_escHtml(String(a.tipo||'').replace(/_/g,' '))}</span>
+      ${localId && !fatto?`<button class="btn btn-ghost btn-sm" onclick="openPaziente(${localId});setTimeout(openTypeModal,200)">Visita</button>`:(fatto?'<span class="badge badge-green">Fatto</span>':'')}
+    </div>`;
+  }).join('');
+}
+// «Nuova visita» dalla Dashboard: si sceglie la paziente con la ricerca rapida
+// e si apre subito la scelta del tipo di visita.
+let _cercaPerVisita=false;
+function nuovaVisitaRapida(){
+  apriCercaRapida();
+  if(document.getElementById('modal-cerca-rapida').classList.contains('show')){
+    _cercaPerVisita=true;
+    document.getElementById('cerca-rapida-input').placeholder='Nuova visita: scrivi il nome della paziente…';
+  }
+}
 function renderAlertsHome(){
   const c=document.getElementById('dashboard-alerts');
   if(!c) return;
   c.innerHTML='';
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const ICONS={visita:'🩺',proctologica:'🔍',ginecologica:'🌸',ostetrica:'🤰',ecografia:'🖥️',primo_accesso:'🔬',controllo:'💊',ritiro_referto:'📋'};
 
   // Tutti gli appuntamenti da oggi in poi
@@ -8353,15 +8438,17 @@ function renderPromemoriaScaduti(){
   const list=document.getElementById('overdue-alert-list');
   const title=document.getElementById('overdue-alert-title');
   if(!banner||!list||!title) return;
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const dismessi=new Set(_getPromDismessi());
   let scaduti=[];
   DB.pazienti.forEach(p=>(p.alerts||[]).forEach(a=>{
     if(a.data && a.data<oggi && !dismessi.has(a.id)) scaduti.push({p,a});
   }));
+  document.getElementById('dash-oggi')?.classList.toggle('con-scaduti', scaduti.length>0);
   if(!scaduti.length){ banner.style.display='none'; return; }
   scaduti.sort((x,y)=>(x.a.data||'').localeCompare(y.a.data||''));
-  title.textContent=`${scaduti.length} promemoria scadut${scaduti.length===1?'o':'i'} — nessuna visita/controllo registrato da allora`;
+  title.textContent=`${scaduti.length} promemoria scadut${scaduti.length===1?'o':'i'}`;
+  title.title='Nessuna visita o controllo registrato da allora';
   // Se sono tanti se ne mostrano solo i primi (i più vecchi): il resto si apre
   // a richiesta, così il calendario e il resto della Dashboard restano in vista.
   const MAX_VISIBILI=3, nascosti=_promScadutiTutti ? 0 : Math.max(0, scaduti.length-MAX_VISIBILI);
@@ -8385,7 +8472,7 @@ function renderPromemoriaScaduti(){
 function mostraAllertaPromemoriaScaduti(p){
   const modal=document.getElementById('modal-promemoria-scaduti');
   if(!modal||!p) return;
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const scaduti=(p.alerts||[]).filter(a=>a.data && a.data<oggi)
     .sort((x,y)=>(x.data||'').localeCompare(y.data||''));
   if(!scaduti.length){ modal.classList.remove('show'); return; }
@@ -8416,7 +8503,7 @@ function renderCalendar(){
   document.getElementById('cal-title').textContent=calDate.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
   const first=new Date(y,m,1).getDay(), start=first===0?6:first-1, dim=new Date(y,m+1,0).getDate();
   const b=document.getElementById('calendar-body'); b.innerHTML='';
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const esc=s=>String(s==null?'':s).replace(/[<>&"]/g,x=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[x]));
   const MAX_VISIBILI=3;
   for(let i=0;i<start;i++) b.innerHTML+='<div class="cal-empty"></div>';
@@ -8772,7 +8859,7 @@ function chiudiGravidanzaManualmente(pazId){
   let g=p.gravidanze.find(x=>x.id===grav.gravidanzaId);
   if(!g){ g={id:grav.gravidanzaId}; p.gravidanze.push(g); }
   g.conclusa=true;
-  g.dataConclusione=new Date().toISOString().split('T')[0];
+  g.dataConclusione=gsOggi();
   salvaDB();
   if(typeof gsToast==='function')gsToast('✅ Gravidanza segnata come conclusa','gs-success');
   if(curPaz===pazId) openPaziente(pazId); // refresh della cartella se è quella aperta
@@ -9197,6 +9284,7 @@ function apriCercaRapida(){
   if(!gsCurrentUser || !DB || !Array.isArray(DB.pazienti)) return;
   if(document.querySelector('.overlay.show')) return;
   const inp=document.getElementById('cerca-rapida-input');
+  _cercaPerVisita=false; inp.placeholder='Cognome, nome, telefono o codice fiscale…';
   inp.value=''; _cercaRapidaSel=0;
   renderCercaRapida();
   document.getElementById('modal-cerca-rapida').classList.add('show');
@@ -9226,6 +9314,7 @@ function scegliCercaRapida(i){
   const p=_cercaRapidaRis[i]; if(!p) return;
   closeModal('modal-cerca-rapida');
   openPaziente(p.id);
+  if(_cercaPerVisita){ _cercaPerVisita=false; setTimeout(openTypeModal,220); }
 }
 function tastoCercaRapida(e){
   if(e.key==='ArrowDown'){ e.preventDefault(); _cercaRapidaSel=Math.min(_cercaRapidaSel+1,_cercaRapidaRis.length-1); renderCercaRapida(); }
@@ -9845,7 +9934,7 @@ function confermaFarmaciSelezionatiVisita(ancheStampa){
     const p=DB.pazienti.find(x=>x.id===curPaz);
     if(p){
       if(!p.farmaciManuali) p.farmaciManuali=[];
-      const oggiIso=new Date().toISOString().split('T')[0];
+      const oggiIso=gsOggi();
       const inTerapiaVisite=document.getElementById('mfv-anche-terapia-visite')?.checked||false;
       scelti.forEach((f,i)=>{
         p.farmaciManuali.push({
@@ -10036,7 +10125,7 @@ function risolviGravidanzaPerNuovaVisita(pazId){
 }
 
 function creaNuovaGravidanza(p){
-  const g={id:'grav_'+Date.now(),dataInizio:new Date().toISOString().split('T')[0]};
+  const g={id:'grav_'+Date.now(),dataInizio:gsOggi()};
   p.gravidanze.push(g);
   return g.id;
 }
@@ -10047,7 +10136,7 @@ function startEditor(tipo, vid=null){
   if(vid){
     const p=DB.pazienti.find(x=>x.id===curPaz);
     const v=p?.visite.find(x=>x.id===vid);
-    const oggi=new Date().toISOString().split('T')[0];
+    const oggi=gsOggi();
     if(v && v.data!==oggi){
       if(typeof gsToast==='function')gsToast('🔒 Le visite di giorni precedenti non sono più modificabili','gs-error');
       return;
@@ -10066,7 +10155,7 @@ function startEditor(tipo, vid=null){
 
   // Data della visita: oggi per una visita nuova (modificabile per inserirne una
   // passata), quella salvata per una visita esistente.
-  const _oggiStr=new Date().toISOString().split('T')[0];
+  const _oggiStr=gsOggi();
   const dataEl=document.getElementById('editor-data-visita');
   if(dataEl){
     const pz=DB.pazienti.find(x=>x.id===curPaz);
@@ -10157,12 +10246,12 @@ function parseDataProssimoControllo(testo){
     if(unita.startsWith('giorn')) d.setDate(d.getDate()+n);
     else if(unita.startsWith('settiman')) d.setDate(d.getDate()+n*7);
     else if(unita.startsWith('mes')) d.setMonth(d.getMonth()+n);
-    return d.toISOString().split('T')[0];
+    return gsDataLocale(d);
   }
 
   // "domani" / "dopodomani"
-  if(/\bdopodomani\b/.test(t)){ const d=new Date(oggi); d.setDate(d.getDate()+2); return d.toISOString().split('T')[0]; }
-  if(/\bdomani\b/.test(t)){ const d=new Date(oggi); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; }
+  if(/\bdopodomani\b/.test(t)){ const d=new Date(oggi); d.setDate(d.getDate()+2); return gsDataLocale(d); }
+  if(/\bdomani\b/.test(t)){ const d=new Date(oggi); d.setDate(d.getDate()+1); return gsDataLocale(d); }
 
   // "1 settimana" / "un mese" (senza "tra", scrittura abbreviata comune)
   m=t.match(/\b(\d+|un|una)\s*(giorn[oi]|settiman[ae]|mes[ei])\b/);
@@ -10173,7 +10262,7 @@ function parseDataProssimoControllo(testo){
     if(unita.startsWith('giorn')) d.setDate(d.getDate()+n);
     else if(unita.startsWith('settiman')) d.setDate(d.getDate()+n*7);
     else if(unita.startsWith('mes')) d.setMonth(d.getMonth()+n);
-    return d.toISOString().split('T')[0];
+    return gsDataLocale(d);
   }
 
   // Data esplicita numerica: 15/07/2026, 15-07-2026, 15/07/26
@@ -10182,7 +10271,7 @@ function parseDataProssimoControllo(testo){
     let [,gg,mm,aaaa]=m;
     if(aaaa.length===2) aaaa='20'+aaaa;
     const d=new Date(parseInt(aaaa),parseInt(mm)-1,parseInt(gg));
-    if(!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    if(!isNaN(d.getTime())) return gsDataLocale(d);
   }
 
   // Data esplicita testuale: 15 luglio 2026, 15 luglio (anno corrente o successivo se già passata)
@@ -10192,7 +10281,7 @@ function parseDataProssimoControllo(testo){
     let anno=m[3]?parseInt(m[3]):oggi.getFullYear();
     let d=new Date(anno,mese,gg);
     if(!m[3] && d<oggi) d=new Date(anno+1,mese,gg); // se l'anno non è specificato e la data è già passata, assume l'anno prossimo
-    if(!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    if(!isNaN(d.getTime())) return gsDataLocale(d);
   }
 
   return null;
@@ -10433,7 +10522,7 @@ async function caricaConsensoCartaceo(){
   if(file.size>15*1024*1024){ if(typeof gsToast==='function') gsToast('⚠️ File troppo grande (limite 15 MB)','gs-error'); return; }
   if(!curPaz){ if(typeof gsToast==='function') gsToast('Apri prima una paziente','gs-error'); return; }
   const titolo=document.getElementById('cc-titolo').value.trim() || 'Consenso informato';
-  const dataFirma=document.getElementById('cc-data').value || new Date().toISOString().split('T')[0];
+  const dataFirma=document.getElementById('cc-data').value || gsOggi();
   try{
     await GS_STORAGE.allegati.aggiungi({
       pazienteId:curPaz,
@@ -10518,7 +10607,7 @@ function salvaVisita(){
   const esistente=curVisita?p.visite.find(x=>x.id===curVisita):null;
   const v={
     id:curVisita||Date.now(),
-    data:dataVisitaEditor()||(esistente?esistente.data:new Date().toISOString().split('T')[0]),
+    data:dataVisitaEditor()||(esistente?esistente.data:gsOggi()),
     ora:esistente?.ora||new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
     tipo:curMode
   };
@@ -10760,7 +10849,7 @@ function anteprimaStampa(){
   // Anteprima con lo STESSO motore del referto vero (prima era un modello a
   // parte e non corrispondeva alla stampa), con le impostazioni ancora da salvare.
   const c=_leggiImpostazioniStampa();
-  const oggi=new Date().toISOString().slice(0,10);
+  const oggi=gsOggi();
   const p={nome:'Maria', cognome:'Rossi', nascita:'1985-05-08', cf:'RSSMRA85E48H501X'};
   const v={tipo:'gen', data:oggi, genData:{
     motivo:'Controllo annuale.',
@@ -10801,7 +10890,7 @@ function apriNuovaPrenotazioneGS(pazIdPreselezionato){
   document.getElementById('np-paz-chip').style.display='none';
   document.getElementById('np-paz-chip').innerHTML='';
   document.getElementById('np-paz-dropdown').classList.remove('show');
-  document.getElementById('np-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('np-data').value=gsOggi();
   document.getElementById('np-ora').value='';
   document.getElementById('np-tipo').value='';
   document.getElementById('np-durata').value='30';
@@ -11005,7 +11094,7 @@ function renderVisiteList(p){
     else { const d=v.gynoData||{}; conclShort=d.conclusioni||d.motivo||'–'; terapia=d.terapia||''; }
     if(conclShort.length>80) conclShort=conclShort.slice(0,80)+'…';
     const haTerapia=terapia&&terapia.trim().length>0;
-    const oggi=new Date().toISOString().split('T')[0];
+    const oggi=gsOggi();
     const modificabile=v.data===oggi;
     const editBtn=modificabile
       ?`<button class="btn btn-ghost btn-sm" onclick="startEditor('${tipo}',${v.id})" title="Modifica la visita di oggi">✏️ Modifica</button>`
@@ -11120,7 +11209,7 @@ function renderFarmaciAttuali(p){
 function apriNuovoFarmacoManuale(){
   document.getElementById('fm-farmaco').value='';
   document.getElementById('fm-dosaggio').value='';
-  document.getElementById('fm-da-quando').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fm-da-quando').value=gsOggi();
   document.getElementById('fm-note').value='';
   document.getElementById('fm-in-terapia').checked=true;
   document.getElementById('m-farmaco-manuale').classList.add('show');
@@ -11270,7 +11359,7 @@ function getIntestazioneRicetta(){
 function apriRicettaVergine(){
   const cfg=getIntestazioneRicetta();
   document.getElementById('rxv-paziente').value='';
-  document.getElementById('rxv-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('rxv-data').value=gsOggi();
   document.getElementById('rxv-testo').value='';
   document.getElementById('rxv-cfg-nome').value=cfg.nome||'';
   document.getElementById('rxv-cfg-spec').value=cfg.spec||'';
@@ -11863,7 +11952,7 @@ function _apriPromptNomeConsenso(i, modoFirma){
   _cnIndiceCorrente=i; _cnModoFirma=modoFirma;
   const p=curPaz?DB.pazienti.find(x=>x.id===curPaz):null;
   const nomeEl=document.getElementById('cn-nome'); if(nomeEl) nomeEl.value = p?`${p.nome} ${p.cognome}`:'';
-  const dataEl=document.getElementById('cn-data'); if(dataEl) dataEl.value = new Date().toISOString().split('T')[0];
+  const dataEl=document.getElementById('cn-data'); if(dataEl) dataEl.value = gsOggi();
   _firmatarioTutoreMap['cn-nome']=false;
   document.getElementById('modal-consenso-nome').classList.add('show');
 }
@@ -11940,7 +12029,7 @@ function _apriModalConsensoVisita(tipo, preseleziona){
   if(sub) sub.textContent = `Scegli uno o più moduli per questa ${_META_TIPO_VISITA[tipo]||'visita'} — verranno stampati insieme su un unico foglio da far firmare. In evidenza i più pertinenti.`;
   const nomeEl=document.getElementById('cv-nome'), dataEl=document.getElementById('cv-data');
   if(nomeEl) nomeEl.value = p ? `${p.nome} ${p.cognome}` : '';
-  if(dataEl) dataEl.value = new Date().toISOString().split('T')[0];
+  if(dataEl) dataEl.value = gsOggi();
   _firmatarioTutoreMap['cv-nome']=false;
 
   const prefix=_consensoVisitaPrefix(tipo);
@@ -12029,7 +12118,7 @@ function pazFirmaCombinataEProsegui(){
   if(!_consensoVisitaSelezionati.size){ if(typeof gsToast==='function') gsToast('Seleziona almeno un modulo, oppure usa "Salta"','gs-error'); return; }
   const nome=(document.getElementById('cv-nome')?.value||'').trim();
   if(!nome){ if(typeof gsToast==='function') gsToast('Inserisci il nome di chi firma','gs-error'); return; }
-  const dataIso=document.getElementById('cv-data')?.value || new Date().toISOString().split('T')[0];
+  const dataIso=document.getElementById('cv-data')?.value || gsOggi();
   const tipo=_consensoVisitaTipoPending || curMode;
   const prefix=_consensoVisitaPrefix(tipo);
   const scelti=getConsensi().filter(c=>_consensoVisitaSelezionati.has(c.titolo));
@@ -12057,7 +12146,7 @@ function pazStampaSenzaFirma(){
   if(!_consensoVisitaSelezionati.size){ if(typeof gsToast==='function') gsToast('Seleziona almeno un modulo, oppure usa "Salta"','gs-error'); return; }
   const nome=(document.getElementById('cv-nome')?.value||'').trim();
   if(!nome){ if(typeof gsToast==='function') gsToast('Inserisci il nome di chi firma','gs-error'); return; }
-  const dataIso=document.getElementById('cv-data')?.value || new Date().toISOString().split('T')[0];
+  const dataIso=document.getElementById('cv-data')?.value || gsOggi();
   const tipo=_consensoVisitaTipoPending || curMode;
   const prefix=_consensoVisitaPrefix(tipo);
   const scelti=getConsensi().filter(c=>_consensoVisitaSelezionati.has(c.titolo));
@@ -12272,7 +12361,7 @@ async function inviaPromemoriaAppuntamenti(avvisa){
   const c=getPromemoriaEmail();
   if(!c.attivo || _promEmailInCorso || gsDemoMode || !gsCurrentUser || !gsDbStorageKey || !gsFunctions) return;
   const dom=new Date(); dom.setDate(dom.getDate()+1);
-  const domani=dom.toISOString().split('T')[0], oggi=new Date().toISOString().split('T')[0];
+  const domani=dom.toISOString().split('T')[0], oggi=gsOggi();
   // Domani, oppure oggi se l'app non era aperta ieri (purché l'ora non sia passata).
   const adesso=new Date().toTimeString().slice(0,5);
   const daInviare=(DB.appuntamenti||[]).filter(a=>!a.promemoriaInviato && a.stato!=='cancellato' && a.stato!=='completato'
@@ -12511,7 +12600,7 @@ function apriScoreTev(entryId){
   const p = curPaz ? DB.pazienti.find(x=>x.id===curPaz) : null;
   if(!p){ if(typeof gsToast==='function') gsToast('Apri prima una paziente','gs-error'); return; }
   if(!p.scoreTev) p.scoreTev=[];
-  const oggi = new Date().toISOString().split('T')[0];
+  const oggi = gsOggi();
   let entry = entryId ? p.scoreTev.find(x=>x.id===entryId) : p.scoreTev.find(x=>x.data===oggi);
   if(!entry){
     entry = { id:'st'+Date.now().toString(36), data:oggi, cognome:p.cognome, nome:p.nome, nascita:p.nascita||'', settimane:document.getElementById('ob-settimane')?.value||'', checked:[] };
@@ -12571,7 +12660,7 @@ function salvaScoreTev(){
   const nome=spazio>0?nomeCompleto.slice(spazio+1):'';
   const entry={
     id: _stevIdCorrente || 'st'+Date.now().toString(36),
-    data: document.getElementById('stev-data').value || new Date().toISOString().split('T')[0],
+    data: document.getElementById('stev-data').value || gsOggi(),
     cognome: cognome||p.cognome, nome: nome||p.nome,
     nascita: document.getElementById('stev-nascita').value||'',
     settimane: document.getElementById('stev-settimane').value||'',
@@ -14045,7 +14134,7 @@ function visualizzaVisita(vid){
   }else{
     riepilogoBtn.style.display='none';
   }
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const editBtn=document.getElementById('vv-edit-btn');
   if(v.data===oggi){
     editBtn.style.display='inline-flex';
@@ -14413,7 +14502,7 @@ async function esportaBackupCompleto(conPassword){
       contenuto={ formato:GS_BACKUP_FORMATO+'-cifrato', ...(await gsEncryptJSON(backup,key,saltB64)) };
       suffisso='_protetto';
     }
-    const data=new Date().toISOString().slice(0,10);
+    const data=gsOggi();
     gsSalvaFile(new Blob([JSON.stringify(contenuto)],{type:'application/json'}), `${GS_APP_FILE}_BackupCompleto_${data}${suffisso}.json`);
     localStorage.setItem('gyno_ultimo_backup_auto', new Date().toISOString());
     if(typeof renderBackupStats==='function') renderBackupStats();
@@ -14440,7 +14529,7 @@ function exportCSV(){
   });
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download=`${GS_APP_FILE}_Pazienti_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download=`${GS_APP_FILE}_Pazienti_${gsOggi()}.csv`;
   a.click();
 }
 
@@ -14700,7 +14789,7 @@ function caricaAppuntamenti(riepilogoOggi){
   GS_APPTS=DB.appuntamenti;
   GS_APPTS.sort((a,b)=>(a.data||'').localeCompare(b.data||'') || (a.ora||'').localeCompare(b.ora||''));
   renderFBAppts(); renderAlertsHome(); renderCalendar();
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const apptOggi=GS_APPTS.filter(a=>a.data===oggi && a.stato!=='cancellato');
   const nb=document.getElementById('appt-sidebar-badge');
   if(nb) nb.textContent=apptOggi.length||'';
@@ -14747,7 +14836,7 @@ function showApptPopup(appts, oggi){
 }
 
 function renderFBAppts(){
-  const oggi=new Date().toISOString().split('T')[0];
+  const oggi=gsOggi();
   const filtDate=document.getElementById('appt-filter-date')?.value||'';
   const filtTipo=document.getElementById('appt-filter-tipo')?.value||'';
   const ICONS={visita:'🩺',proctologica:'🔍',ginecologica:'🌸',ostetrica:'🤰',ecografia:'🖥️',primo_accesso:'🔬',controllo:'💊',ritiro_referto:'📋'};
