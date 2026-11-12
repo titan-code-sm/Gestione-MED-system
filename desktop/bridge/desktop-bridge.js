@@ -303,12 +303,16 @@
   // Restituisce false se l'operatore annulla.
   window.gsSalvaPdf = async function(blob, nome){
     try{
-      const percorso = ANDROID
-        ? await salvaTablet(blob, /\.pdf$/i.test(nome||'') ? nome : (nome || 'documento') + '.pdf')
-        : await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
+      // Tablet: il PDF (dati del paziente) non va nella cartella Download,
+      // che tutte le app possono leggere, ma nella memoria privata dell'app;
+      // si apre subito nel lettore PDF per stamparlo o condividerlo.
+      if(ANDROID){
+        await apriPdfPrivato(blob, /\.pdf$/i.test(nome||'') ? nome : (nome || 'documento') + '.pdf');
+        return true;
+      }
+      const percorso = await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
       if(!percorso) return false;
       if(typeof gsToast==='function') gsToast('📄 PDF salvato: ' + percorso, 'gs-success');
-      if(ANDROID) apriPercorso(percorso, 'application/pdf');
       return true;
     }catch(e){
       console.error('Salvataggio PDF:', e);
@@ -330,7 +334,20 @@
     const dati = Array.from(new Uint8Array(await blob.arrayBuffer()));
     return invoke('file_salva_tablet', { dati, nome: String(nome), dove: dove || null });
   }
+  async function apriPdfPrivato(blob, nome){
+    const percorso = await salvaTablet(blob, nome, 'temporanei');
+    if(typeof gsToast==='function') gsToast('📄 PDF pronto: resta nella memoria protetta dell\'app (non in Download). Per tenerlo usa «Condividi» o «Stampa» dal lettore PDF.', 'gs-success');
+    apriPercorso(percorso, 'application/pdf');
+  }
   async function salvaSulTablet(blob, nome){
+    if(/\.pdf$/i.test(nome||'') || /pdf/i.test(blob.type||'')){
+      try{ await apriPdfPrivato(blob, /\.pdf$/i.test(nome||'') ? nome : 'documento.pdf'); return true; }
+      catch(e){
+        console.error('PDF:', e);
+        if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: ' + (e && e.message || e), 'gs-error');
+        return false;
+      }
+    }
     try{
       const percorso = await salvaTablet(blob, nome || 'file.json');
       const breve = String(percorso).split('/').pop();

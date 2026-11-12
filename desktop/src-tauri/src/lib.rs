@@ -292,11 +292,25 @@ async fn file_salva(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> 
 
 fn salva_file(app: &tauri::AppHandle, nome: &str, est: &str, dati: &[u8], temporaneo: bool) -> Result<String, String> {
     let dir = if temporaneo {
-        app.path().app_cache_dir().map_err(|e| e.to_string())?.join("aperti")
+        let d = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("aperti");
+        pulisci_vecchi(&d);
+        d
     } else {
         cartella_download()
     };
     salva_in(&dir, nome, est, dati)
+}
+
+// File aperti dalla memoria privata (PDF di referti, consensi, allegati):
+// sono copie da stampare o condividere, quindi dopo un giorno si cancellano.
+fn pulisci_vecchi(dir: &std::path::Path) {
+    let Ok(voci) = std::fs::read_dir(dir) else { return };
+    let limite = std::time::Duration::from_secs(24 * 3600);
+    for voce in voci.flatten() {
+        let vecchio = voce.metadata().ok().and_then(|m| m.modified().ok())
+            .and_then(|t| t.elapsed().ok()).map_or(false, |e| e > limite);
+        if vecchio { let _ = std::fs::remove_file(voce.path()); }
+    }
 }
 
 // Tablet Android: la WebView di Android non passa a Tauri il corpo «grezzo»
