@@ -79,14 +79,23 @@ class PonteMedSystem(private val attivita: MainActivity, private val finestra: W
     attivita.runOnUiThread { finestra.evaluateJavascript(js, null) }
   }
 
+  // Un solo scaricamento alla volta: all'accesso l'app controlla l'aggiornamento
+  // due volte quasi insieme; prima della 1.8.8 i due scaricamenti scrivevano
+  // nello stesso file e Android trovava un .apk rovinato («Errore durante
+  // l'analisi del pacchetto»). Ora ogni scaricamento va in un file suo, si
+  // controlla che sia completo e che Android lo sappia leggere, e solo allora
+  // diventa il file da installare.
+  private val inCorso = java.util.concurrent.atomic.AtomicBoolean(false)
+
   @JavascriptInterface
   fun scaricaAggiornamento(url: String): Boolean {
     if (!url.startsWith(origineRelease) || !url.endsWith(".apk")) return false
+    if (!inCorso.compareAndSet(false, true)) return true   // risponde lo scaricamento già avviato
     Thread {
+      val cartella = File(attivita.cacheDir, "aggiornamento")
+      cartella.mkdirs()
+      val parziale = File(cartella, "scarico-" + System.currentTimeMillis() + ".part")
       try {
-        val cartella = File(attivita.cacheDir, "aggiornamento")
-        cartella.mkdirs()
-        val destinazione = File(cartella, "medsystem.apk")
         var indirizzo = URL(url)
         var connessione: HttpURLConnection
         var salti = 0
@@ -105,11 +114,22 @@ class PonteMedSystem(private val attivita: MainActivity, private val finestra: W
           if (codice != 200) throw Exception("download non riuscito (codice $codice)")
           break
         }
-        connessione.inputStream.use { ingresso -> FileOutputStream(destinazione).use { ingresso.copyTo(it) } }
+        val attesi = connessione.contentLengthLong
+        connessione.inputStream.use { ingresso -> FileOutputStream(parziale).use { ingresso.copyTo(it) } }
         connessione.disconnect()
-        apkScaricato = destinazione
+        if (attesi > 0 && parziale.length() != attesi) throw Exception("download incompleto (" + parziale.length() + " di " + attesi + " byte): riprova")
+        val info = attivita.packageManager.getPackageArchiveInfo(parziale.absolutePath, 0)
+          ?: throw Exception("il file scaricato non è un aggiornamento valido: riprova")
+        if (info.packageName != attivita.packageName) throw Exception("il file scaricato è di un'altra app (" + info.packageName + ")")
+        val pronto = File(cartella, "medsystem-" + System.currentTimeMillis() + ".apk")
+        if (!parziale.renameTo(pronto)) throw Exception("impossibile preparare l'aggiornamento")
+        cartella.listFiles()?.forEach { if (it != pronto) it.delete() }
+        apkScaricato = pronto
+        inCorso.set(false)
         rispondiAggiornamento("ok", "")
       } catch (e: Exception) {
+        parziale.delete()
+        inCorso.set(false)
         rispondiAggiornamento("errore", e.message ?: "download non riuscito")
       }
     }.start()
@@ -119,6 +139,7 @@ class PonteMedSystem(private val attivita: MainActivity, private val finestra: W
   @JavascriptInterface
   fun installaAggiornamento(): Boolean {
     val file = apkScaricato ?: return false
+    if (!file.exists()) return false
     return try {
       val uri = FileProvider.getUriForFile(attivita, attivita.packageName + ".file", file)
       val intento = Intent(Intent.ACTION_VIEW)

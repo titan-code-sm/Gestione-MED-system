@@ -389,7 +389,15 @@
       return false;
     };
     const modelloDi = n=>/proct/i.test(n)?'proct':/gineco/i.test(n)?'gineco':'base';
-    window.gsAggiornamentoScarica = async function(){
+    // Una sola richiesta alla volta: chi chiama mentre uno scaricamento è in
+    // corso riceve lo stesso risultato (prima i due scaricamenti dell'accesso
+    // rovinavano il file .apk).
+    let inCorso = null;
+    window.gsAggiornamentoScarica = function(){
+      if(!inCorso) inCorso = scaricaApk().finally(()=>{ inCorso = null; });
+      return inCorso;
+    };
+    const scaricaApk = async function(){
       const attuale = await T.app.getVersion();
       const r = await fetch('https://api.github.com/repos/titan-code-sm/Gestione-MED-system/releases/latest', { headers: { Accept: 'application/vnd.github+json' } });
       if(!r.ok) throw new Error('GitHub non raggiungibile (' + r.status + ')');
