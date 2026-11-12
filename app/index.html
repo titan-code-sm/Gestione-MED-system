@@ -1132,6 +1132,24 @@ label.form-label{font-weight:550;}
 .nav-group{margin-bottom:16px;}
 .opts-item.active,.opts-trigger.active{color:var(--primary);background:var(--primary-dim);}
 
+/* Cartella paziente: menu «Altro», allergie, visite colorate per tipo */
+.gs-menu{position:relative;}
+.gs-menu-lista{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:50;min-width:250px;background:var(--surface);border:1px solid var(--separator);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;animation:popoverIn .16s var(--transition);}
+.gs-menu.aperto .gs-menu-lista{display:block;}
+.gs-menu-lista button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 12px;border:none;background:transparent;border-radius:var(--radius-sm);font-family:var(--font);font-size:.86rem;font-weight:500;color:var(--label2);text-align:left;cursor:pointer;transition:background .12s;}
+.gs-menu-lista button:hover{background:var(--surface2);color:var(--label);}
+.patient-hero{overflow:visible;}
+.paz-allergie{align-items:center;gap:8px;margin-top:16px;padding:8px 14px;border-radius:var(--radius-sm);background:var(--red-dim);color:var(--red);font-weight:600;font-size:.9rem;width:fit-content;max-width:100%;}
+.paz-allergie-tit{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;}
+.visit-item{border-left:3px solid var(--vt,var(--primary));}
+.visit-icon{background:color-mix(in srgb,var(--vt,var(--primary)) 12%,transparent);color:var(--vt,var(--primary));}
+.visit-tipo-ob{--vt:var(--purple);}
+.visit-tipo-eco{--vt:var(--teal);}
+.visit-tipo-pr{--vt:var(--orange);}
+.visit-type{letter-spacing:.04em;font-weight:600;color:var(--vt,var(--label4));}
+body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
+@media(pointer:coarse){ .gs-menu-lista button{min-height:46px;} }
+
 /* Menu a sole icone: tablet in verticale e finestre strette */
 @media(min-width:769px) and (max-width:1000px){
   aside{width:72px;}
@@ -2196,23 +2214,36 @@ label.form-label{font-weight:550;}
           <span id="h-cf">🪪 CF</span>
         </div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" id="h-grav-conclusa-btn" data-modelli="gineco" style="display:none;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;" onclick="chiudiGravidanzaManualmente(curPaz)">🤰 Segna Gravidanza Conclusa</button>
-        <button class="btn btn-ghost" onclick="esportaCartellaPDF()" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;" title="Tutte le visite di questa paziente in un unico PDF">📄 Esporta Cartella</button>
-        <button class="btn btn-ghost" onclick="stampaCartella()" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;" title="Stampa tutte le visite di questa paziente, una per foglio">🖨️ Stampa Cartella</button>
-        <button class="btn btn-ghost" onclick="toggleEdit()" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:#fff;">✏️ Modifica</button>
-        <button class="btn" style="background:rgba(255,255,255,0.9);color:var(--label);" onclick="openTypeModal()">+ Nuova Visita</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-ghost" onclick="toggleEdit()">✏️ Modifica</button>
+        <div class="gs-menu">
+          <button class="btn btn-ghost" onclick="gsMenuApri(this)" aria-haspopup="true">Altro ▾</button>
+          <div class="gs-menu-lista">
+            <button onclick="esportaCartellaPDF()" title="Tutte le visite di questa paziente in un unico PDF">📄 Esporta cartella in PDF</button>
+            <button onclick="stampaCartella()" title="Stampa tutte le visite di questa paziente, una per foglio">🖨️ Stampa cartella</button>
+            <button onclick="apriAppuntamentoDaCartella()">📅 Nuovo appuntamento</button>
+            <button id="h-grav-conclusa-btn" data-modelli="gineco" style="display:none;" onclick="chiudiGravidanzaManualmente(curPaz)">🤰 Segna gravidanza conclusa</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openTypeModal()">🩺 Nuova Visita</button>
       </div>
+    </div>
+    <!-- Allergie: sempre in vista sotto il nome se sono note, mai nascondibili -->
+    <div id="allergie-banner" class="paz-allergie" style="display:none;">
+      <span>⚠️</span>
+      <span class="paz-allergie-tit">Allergie</span>
+      <span id="allergie-banner-testo" style="white-space:pre-wrap;"></span>
     </div>
   </div>
 
-  <!-- Banner allergie: sempre visibile in cima alla cartella se sono note allergie, mai nascondibile -->
-  <div id="allergie-banner" style="display:none;background:var(--red-dim);border:2px solid var(--red);border-radius:14px;padding:14px 18px;margin-bottom:20px;align-items:center;gap:14px;">
-    <span style="font-size:1.6rem;flex-shrink:0;">⚠️</span>
-    <div>
-      <div style="font-weight:800;color:var(--red);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;">Allergie note</div>
-      <div id="allergie-banner-testo" style="font-weight:700;color:var(--red);font-size:1rem;margin-top:2px;white-space:pre-wrap;"></div>
+  <!-- Promemoria scaduti di questa paziente: una fascia nella pagina (prima era
+       una finestra da chiudere a ogni apertura della cartella) -->
+  <div id="paz-prom-scaduti" class="gs-avviso gs-avviso-rosso" style="display:none;padding:14px 18px;margin-bottom:20px;">
+    <div class="gs-avviso-titolo" style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:.92rem;">
+      <span>⚠️</span><span id="paz-prom-scaduti-titolo" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="pazSwitchTab('promemoria');document.querySelector('.paz-shell').scrollIntoView({behavior:'smooth'})">Vedi promemoria</button>
     </div>
+    <div id="paz-prom-scaduti-lista" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:.86rem;color:var(--label2);"></div>
   </div>
 
   <div id="edit-anagrafica" style="display:none;" class="card" style="margin-bottom:20px;">
@@ -8470,27 +8501,30 @@ function renderPromemoriaScaduti(){
 // Popup di allerta ROSSA all'apertura della cartella di una paziente che ha
 // promemoria con data già passata (nessun controllo registrato da allora).
 function mostraAllertaPromemoriaScaduti(p){
-  const modal=document.getElementById('modal-promemoria-scaduti');
-  if(!modal||!p) return;
+  const box=document.getElementById('paz-prom-scaduti');
+  if(!box||!p) return;
   const oggi=gsOggi();
   const scaduti=(p.alerts||[]).filter(a=>a.data && a.data<oggi)
     .sort((x,y)=>(x.data||'').localeCompare(y.data||''));
-  if(!scaduti.length){ modal.classList.remove('show'); return; }
-  const tit=document.getElementById('prom-scad-titolo');
-  const sub=document.getElementById('prom-scad-sottotitolo');
-  const lista=document.getElementById('prom-scad-lista');
-  if(tit) tit.textContent = `${scaduti.length} promemoria scadut${scaduti.length===1?'o':'i'}`;
-  if(sub) sub.textContent = `${p.cognome} ${p.nome} — nessuna visita o controllo registrato da allora.`;
-  if(lista) lista.innerHTML = scaduti.map(a=>{
+  if(!scaduti.length){ box.style.display='none'; return; }
+  document.getElementById('paz-prom-scaduti-titolo').textContent=`${scaduti.length} promemoria scadut${scaduti.length===1?'o':'i'} — nessuna visita o controllo registrato da allora`;
+  document.getElementById('paz-prom-scaduti-lista').innerHTML=scaduti.map(a=>{
     const dStr=new Date(a.data+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
     const giorni=Math.round((new Date(oggi+'T12:00:00')-new Date(a.data+'T12:00:00'))/86400000);
-    return `<div style="background:var(--red-dim);border-radius:10px;padding:12px 14px;">
-      <div style="font-weight:700;color:var(--red);margin-bottom:3px;">${a.testo||'Promemoria'}</div>
-      <div style="font-size:.8rem;color:var(--label3);">Scaduto il ${dStr} · ${giorni} giorn${giorni===1?'o':'i'} fa</div>
-    </div>`;
+    return `<div><strong>${_escHtml(a.testo||'Promemoria')}</strong> <span style="color:var(--label4)">· scaduto il ${dStr}, ${giorni} giorn${giorni===1?'o':'i'} fa</span></div>`;
   }).join('');
-  modal.classList.add('show');
+  box.style.display='';
 }
+// Menu a tendina generico («Altro ▾»): si chiude scegliendo una voce o cliccando fuori
+function gsMenuApri(btn){
+  const m=btn.parentElement, era=m.classList.contains('aperto');
+  document.querySelectorAll('.gs-menu.aperto').forEach(x=>x.classList.remove('aperto'));
+  if(!era) m.classList.add('aperto');
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest('.gs-menu>button')) return;
+  document.querySelectorAll('.gs-menu.aperto').forEach(x=>x.classList.remove('aperto'));
+});
 
 // ═══════════════════════════════════════════════════
 //  CALENDAR
@@ -11100,12 +11134,12 @@ function renderVisiteList(p){
       ?`<button class="btn btn-ghost btn-sm" onclick="startEditor('${tipo}',${v.id})" title="Modifica la visita di oggi">✏️ Modifica</button>`
       :`<span class="visit-chiusa" title="Le visite di giorni precedenti non sono più modificabili">🔒 Chiusa</span>`;
 
-    c.innerHTML+=`<div class="visit-item">
-      <div class="visit-icon" style="background:var(--primary-dim)">${meta.icon}</div>
+    c.innerHTML+=`<div class="visit-item visit-tipo-${tipo}">
+      <div class="visit-icon">${meta.icon}</div>
       <div class="visit-info">
         <div class="visit-date">${new Date(v.data).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}${v.ora?` <span class="visit-ora">🕐 ${v.ora}</span>`:''}</div>
         <div class="visit-type">${meta.label}</div>
-        <div class="visit-diag">${conclShort}</div>
+        <div class="visit-diag">${_escHtml(conclShort)}</div>
       </div>
       <div class="visit-actions">
         <button class="btn btn-ghost btn-sm" onclick="visualizzaVisita(${v.id})" title="Visualizza il referto">👁️ Apri</button>
