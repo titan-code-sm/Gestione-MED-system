@@ -59,6 +59,13 @@ td select{width:auto;padding:5px 8px;font-size:.8rem}
 .login .card{padding:30px}
 .login h1{font-size:1.4rem;font-weight:700;margin:14px 0 4px}
 .campo{margin-bottom:12px}
+.pass-box{position:relative}
+.pass-box input{padding-right:42px}
+.pass-occhio{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;background:none;border-radius:6px;color:var(--label4);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pass-occhio:hover{color:var(--primary);background:var(--primary-dim)}
+.pass-occhio svg{width:18px;height:18px}
+.ricordami{display:flex;align-items:center;gap:8px;font-size:.84rem;font-weight:500;color:var(--label3);margin:2px 0 12px;cursor:pointer}
+.ricordami input{width:16px;height:16px;margin:0;accent-color:var(--primary);cursor:pointer}
 .overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);align-items:center;justify-content:center;z-index:50}
 .overlay.show{display:flex}
 .modal{background:#fff;border-radius:14px;padding:24px;width:min(440px,92vw);box-shadow:0 18px 44px rgba(15,23,42,.18)}
@@ -228,7 +235,8 @@ a.btn{text-decoration:none}
     <div style="color:var(--label4);font-size:.85rem;margin-bottom:20px">MED System · riservato all'amministratore</div>
     <form onsubmit="event.preventDefault();accedi()">
       <div class="campo"><label for="l-email">Email</label><input id="l-email" type="email" autocomplete="username" required></div>
-      <div class="campo"><label for="l-pass">Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+      <div class="campo"><label for="l-pass">Password</label><div class="pass-box"><input id="l-pass" type="password" autocomplete="current-password" required><button type="button" class="pass-occhio" id="l-occhio" onclick="mostraPassword()" aria-label="Mostra password" title="Mostra password"></button></div></div>
+      <label class="ricordami"><input type="checkbox" id="l-ricorda"> Rimani collegato su questo computer</label>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" id="l-btn">Accedi</button>
     </form>
     <div style="text-align:center;margin-top:12px"><a href="#" onclick="event.preventDefault();recuperaPassword()" style="color:var(--primary);font-size:.84rem;text-decoration:none">Password dimenticata?</a></div>
@@ -567,8 +575,27 @@ const app=firebase.initializeApp({
 },'medsystem-portale');
 const auth=app.auth();
 const portale=app.functions('europe-west1').httpsCallable('portaleUtenti');
-// Sessione valida solo finché la scheda resta aperta.
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+// «Rimani collegato»: sessione salvata nel browser (resta attiva anche chiudendolo).
+// Altrimenti la sessione vale solo finché la scheda resta aperta.
+// La password non la salviamo mai noi: se vuoi, la ricorda il browser.
+const PREF_RICORDA='medsystem-portale-ricorda', PREF_EMAIL='medsystem-portale-email';
+function leggiPref(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function scriviPref(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} }
+const ricordaAttivo=leggiPref(PREF_RICORDA)==='1';
+auth.setPersistence(ricordaAttivo?firebase.auth.Auth.Persistence.LOCAL:firebase.auth.Auth.Persistence.SESSION);
+document.getElementById('l-ricorda').checked=ricordaAttivo;
+if(leggiPref(PREF_EMAIL)) document.getElementById('l-email').value=leggiPref(PREF_EMAIL);
+const ICONA_OCCHIO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICONA_OCCHIO_NO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+document.getElementById('l-occhio').innerHTML=ICONA_OCCHIO;
+function mostraPassword(vedi){
+  const i=$('l-pass'), b=$('l-occhio');
+  if(vedi===undefined) vedi=i.type==='password';
+  i.type=vedi?'text':'password';
+  b.innerHTML=vedi?ICONA_OCCHIO_NO:ICONA_OCCHIO;
+  b.title=vedi?'Nascondi password':'Mostra password';
+  b.setAttribute('aria-label',b.title);
+}
 
 let utenti=[], _uidPass=null;
 // Modelli disponibili per il sito demo (devono esistere anche nell'app: GS_MODELLI).
@@ -1117,7 +1144,14 @@ function generaPassword(){
 
 async function accedi(){
   const btn=$('l-btn'); btn.disabled=true;
-  try{ await auth.signInWithEmailAndPassword($('l-email').value.trim(), $('l-pass').value); }
+  const ricorda=$('l-ricorda').checked, email=$('l-email').value.trim();
+  mostraPassword(false); // il browser propone di salvare la password solo se il campo è di tipo password
+  try{
+    await auth.setPersistence(ricorda?firebase.auth.Auth.Persistence.LOCAL:firebase.auth.Auth.Persistence.SESSION);
+    await auth.signInWithEmailAndPassword(email, $('l-pass').value);
+    scriviPref(PREF_RICORDA, ricorda?'1':null);
+    scriviPref(PREF_EMAIL, ricorda?email:null);
+  }
   catch(e){ msg($('l-msg'),'Email o password non corretti.'); }
   btn.disabled=false;
 }
@@ -1140,7 +1174,7 @@ auth.onAuthStateChanged(async user=>{
   }
   $('vista-login').style.display=user?'none':'';
   $('vista-portale').style.display=user?'':'none';
-  $('l-pass').value='';
+  $('l-pass').value=''; mostraPassword(false);
   if(user){ $('io').textContent=user.email; initLicenze(); caricaUtenti(); caricaModelloDemo(); caricaPasswordDownload(); caricaDownload(); disegnaGuida(); disegnaLink(); vai((location.hash||'').slice(1)||'dashboard'); }
 });
 
