@@ -7345,9 +7345,12 @@ async function controllaAggiornamentoRemoto(d, ref){
   if(_aggStato && _aggRichiesta===r.quando) return;            // già in corso o pronta
   const esito = d.aggiornamentoEsito;
   if(esito && esito.richiesta===r.quando && esito.stato==='errore' && _aggRichiesta===r.quando) return; // riprova al prossimo avvio
-  let attuale=''; try{ attuale = await T.app.getVersion(); }catch(e){ return; }
-  if(!_versioneMinore(attuale, r.versione)) return;            // già aggiornata
+  // Il posto si prende subito, prima di qualunque attesa: all'accesso questa
+  // funzione parte due volte quasi insieme (profilo + onSnapshot) e prima
+  // della 1.8.8 sul tablet partivano due scaricamenti sullo stesso file.
   _aggStato='scarico'; _aggRichiesta=r.quando;
+  let attuale=''; try{ attuale = await T.app.getVersion(); }catch(e){ _aggStato=''; return; }
+  if(!_versioneMinore(attuale, r.versione)){ _aggStato=''; return; }   // già aggiornata
   const scrivi = (stato, extra) => ref.update({ aggiornamentoEsito: Object.assign({ richiesta:r.quando, stato, quando:new Date().toISOString(), da:attuale }, extra||{}) }).catch(()=>{});
   scrivi('scarico');
   try{
@@ -7380,7 +7383,12 @@ async function installaAggiornamento(){
     if(window.gsAggiornamentoInstalla){                               // tablet Android: conferma di Android
       await window.gsAggiornamentoInstalla();
       btn.disabled = false; btn.textContent = '⬆️ Aggiorna ora';
-      closeModal('modal-aggiornamento'); _aggStato='';
+      closeModal('modal-aggiornamento');
+      // L'aggiornamento resta «pronto»: se il medico annulla la conferma di
+      // Android, il riquadro ricompare fra 30 minuti con lo stesso file, senza
+      // riscaricarlo mentre Android lo sta ancora leggendo.
+      clearTimeout(_aggRimando);
+      _aggRimando = setTimeout(()=>{ if(_aggStato==='pronto') _mostraAggiornamento(); }, 30*60*1000);
       return;
     }
     await window.__TAURI__.core.invoke('aggiornamento_installa');   // l'app si chiude e si riapre
