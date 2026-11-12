@@ -106,7 +106,11 @@ jobs:
           test -n "$attivita" || { echo "::error::MainActivity.kt non trovata"; exit 1; }
           sed "s/^package PACCHETTO$/package $pacchetto/" android/MainActivity.kt > "$attivita"
           mkdir -p $gen/res/xml && cp android/percorsi_file.xml $gen/res/xml/percorsi_file.xml
-          sed -i 's#</application>#<provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.file" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/percorsi_file" /></provider></application>#' $gen/AndroidManifest.xml
+          # FileProvider con una classe sua: Tauri registra già androidx FileProvider
+          # (authority .fileprovider) e con due provider della stessa classe Android
+          # usava le cartelle di quello di Tauri: l'installazione dell'aggiornamento
+          # non trovava il file («Errore durante l'analisi del pacchetto»).
+          sed -i 's#</application>#<provider android:name="'"$pacchetto"'.FileMedSystem" android:authorities="${applicationId}.file" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/percorsi_file" /></provider></application>#' $gen/AndroidManifest.xml
           # «Aggiorna» del portale: l'app può proporre l'installazione del nuovo .apk
           sed -i 's#<application#<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" /><application#' $gen/AndroidManifest.xml
           grep -n "provider\|requestLegacy" $gen/AndroidManifest.xml

@@ -48,6 +48,12 @@ class MainActivity : TauriActivity() {
   }
 }
 
+// FileProvider di MED System (authority <pacchetto>.file, cartelle in
+// percorsi_file.xml). Serve una classe sua: Tauri registra già
+// androidx.core.content.FileProvider con altre cartelle e, con due provider
+// della stessa classe, Android usava quello di Tauri anche per i nostri link.
+class FileMedSystem : FileProvider()
+
 class PonteMedSystem(private val attivita: MainActivity, private val finestra: WebView) {
   private val origineRelease = "https://github.com/titan-code-sm/Gestione-MED-system/releases/download/"
   @Volatile private var apkScaricato: File? = null
