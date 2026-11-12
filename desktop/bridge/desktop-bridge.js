@@ -303,7 +303,9 @@
   // Restituisce false se l'operatore annulla.
   window.gsSalvaPdf = async function(blob, nome){
     try{
-      const percorso = await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
+      const percorso = ANDROID
+        ? await salvaTablet(blob, /\.pdf$/i.test(nome||'') ? nome : (nome || 'documento') + '.pdf')
+        : await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
       if(!percorso) return false;
       if(typeof gsToast==='function') gsToast('📄 PDF salvato: ' + percorso, 'gs-success');
       if(ANDROID) apriPercorso(percorso, 'application/pdf');
@@ -322,9 +324,15 @@
   };
 
   // ── Tablet Android: file scaricati dall'app → cartella Download ──
+  // Su Android Tauri non riceve il corpo «grezzo» (byte + intestazioni) delle
+  // chiamate: i byte vanno passati come elenco di numeri a file_salva_tablet.
+  async function salvaTablet(blob, nome, dove){
+    const dati = Array.from(new Uint8Array(await blob.arrayBuffer()));
+    return invoke('file_salva_tablet', { dati, nome: String(nome), dove: dove || null });
+  }
   async function salvaSulTablet(blob, nome){
     try{
-      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'file.json') } });
+      const percorso = await salvaTablet(blob, nome || 'file.json');
       const breve = String(percorso).split('/').pop();
       if(typeof gsToast==='function') gsToast('💾 Salvato nella cartella Download del tablet: ' + breve, 'gs-success');
       return true;
@@ -347,7 +355,7 @@
   // Allegati e consensi da consultare: copia temporanea aperta con l'app del tablet
   async function apriSulTablet(blob, nome){
     try{
-      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'allegato.pdf'), 'X-Dove': 'temporanei' } });
+      const percorso = await salvaTablet(blob, nome || 'allegato.pdf', 'temporanei');
       apriPercorso(percorso, blob.type || tipoDi(nome));
     }catch(e){
       console.error('Apertura file:', e);
