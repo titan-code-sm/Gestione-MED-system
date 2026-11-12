@@ -287,12 +287,44 @@ async fn file_salva(app: tauri::AppHandle, request: tauri::ipc::Request<'_>) -> 
     let est = percent_decode(nome).rsplit('.').next().unwrap_or("").to_lowercase();
     if !["json", "csv", "pdf", "txt", "jpg", "jpeg", "png"].contains(&est.as_str()) { return Err("tipo di file non ammesso".into()); }
     let temporaneo = request.headers().get("x-dove").and_then(|v| v.to_str().ok()) == Some("temporanei");
+    salva_file(&app, nome, &est, dati, temporaneo)
+}
+
+fn salva_file(app: &tauri::AppHandle, nome: &str, est: &str, dati: &[u8], temporaneo: bool) -> Result<String, String> {
     let dir = if temporaneo {
-        app.path().app_cache_dir().map_err(|e| e.to_string())?.join("aperti")
+        let d = app.path().app_cache_dir().map_err(|e| e.to_string())?.join("aperti");
+        pulisci_vecchi(&d);
+        d
     } else {
         cartella_download()
     };
-    salva_in(&dir, nome, &est, dati)
+    salva_in(&dir, nome, est, dati)
+}
+
+// File aperti dalla memoria privata (PDF di referti, consensi, allegati):
+// sono copie da stampare o condividere, quindi dopo un giorno si cancellano.
+fn pulisci_vecchi(dir: &std::path::Path) {
+    let Ok(voci) = std::fs::read_dir(dir) else { return };
+    let limite = std::time::Duration::from_secs(24 * 3600);
+    for voce in voci.flatten() {
+        let vecchio = voce.metadata().ok().and_then(|m| m.modified().ok())
+            .and_then(|t| t.elapsed().ok()).map_or(false, |e| e > limite);
+        if vecchio { let _ = std::fs::remove_file(voce.path()); }
+    }
+}
+
+// Tablet Android: la WebView di Android non passa a Tauri il corpo «grezzo»
+// delle chiamate (byte + intestazioni), quindi file_salva e pdf_salva
+// ricevevano un corpo vuoto («contenuto del file mancante»): niente PDF dei
+// consensi, del referto o esportazioni. Qui i byte arrivano come argomento
+// normale, insieme al nome e alla cartella.
+#[tauri::command]
+async fn file_salva_tablet(app: tauri::AppHandle, dati: Vec<u8>, nome: String, dove: Option<String>) -> Result<String, String> {
+    if dati.is_empty() { return Err("contenuto del file mancante".into()); }
+    let est = percent_decode(&nome).rsplit('.').next().unwrap_or("").to_lowercase();
+    if !["json", "csv", "pdf", "txt", "jpg", "jpeg", "png"].contains(&est.as_str()) { return Err("tipo di file non ammesso".into()); }
+    if est == "pdf" && !dati.starts_with(b"%PDF") { return Err("il file non è un PDF".into()); }
+    salva_file(&app, &nome, &est, &dati, dove.as_deref() == Some("temporanei"))
 }
 
 fn cartella_download() -> std::path::PathBuf {
@@ -407,7 +439,7 @@ pub fn run() {
     builder
         .invoke_handler(tauri::generate_handler![
             chiave_db_leggi, chiave_db_salva, segreto_leggi, segreto_salva,
-            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva, file_salva,
+            backup_scegli_cartella, backup_scrivi, backup_elenca, pdf_salva, file_salva, file_salva_tablet,
             aggiornamento_scarica, aggiornamento_installa
         ])
         .run(tauri::generate_context!())

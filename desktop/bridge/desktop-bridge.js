@@ -303,10 +303,16 @@
   // Restituisce false se l'operatore annulla.
   window.gsSalvaPdf = async function(blob, nome){
     try{
+      // Tablet: il PDF (dati del paziente) non va nella cartella Download,
+      // che tutte le app possono leggere, ma nella memoria privata dell'app;
+      // si apre subito nel lettore PDF per stamparlo o condividerlo.
+      if(ANDROID){
+        await apriPdfPrivato(blob, /\.pdf$/i.test(nome||'') ? nome : (nome || 'documento') + '.pdf');
+        return true;
+      }
       const percorso = await invoke('pdf_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'documento.pdf') } });
       if(!percorso) return false;
       if(typeof gsToast==='function') gsToast('📄 PDF salvato: ' + percorso, 'gs-success');
-      if(ANDROID) apriPercorso(percorso, 'application/pdf');
       return true;
     }catch(e){
       console.error('Salvataggio PDF:', e);
@@ -322,9 +328,28 @@
   };
 
   // ── Tablet Android: file scaricati dall'app → cartella Download ──
+  // Su Android Tauri non riceve il corpo «grezzo» (byte + intestazioni) delle
+  // chiamate: i byte vanno passati come elenco di numeri a file_salva_tablet.
+  async function salvaTablet(blob, nome, dove){
+    const dati = Array.from(new Uint8Array(await blob.arrayBuffer()));
+    return invoke('file_salva_tablet', { dati, nome: String(nome), dove: dove || null });
+  }
+  async function apriPdfPrivato(blob, nome){
+    const percorso = await salvaTablet(blob, nome, 'temporanei');
+    if(typeof gsToast==='function') gsToast('📄 PDF pronto: resta nella memoria protetta dell\'app (non in Download). Per tenerlo usa «Condividi» o «Stampa» dal lettore PDF.', 'gs-success');
+    apriPercorso(percorso, 'application/pdf');
+  }
   async function salvaSulTablet(blob, nome){
+    if(/\.pdf$/i.test(nome||'') || /pdf/i.test(blob.type||'')){
+      try{ await apriPdfPrivato(blob, /\.pdf$/i.test(nome||'') ? nome : 'documento.pdf'); return true; }
+      catch(e){
+        console.error('PDF:', e);
+        if(typeof gsToast==='function') gsToast('⚠️ PDF non aperto: ' + (e && e.message || e), 'gs-error');
+        return false;
+      }
+    }
     try{
-      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'file.json') } });
+      const percorso = await salvaTablet(blob, nome || 'file.json');
       const breve = String(percorso).split('/').pop();
       if(typeof gsToast==='function') gsToast('💾 Salvato nella cartella Download del tablet: ' + breve, 'gs-success');
       return true;
@@ -347,7 +372,7 @@
   // Allegati e consensi da consultare: copia temporanea aperta con l'app del tablet
   async function apriSulTablet(blob, nome){
     try{
-      const percorso = await invoke('file_salva', new Uint8Array(await blob.arrayBuffer()), { headers: { 'X-Nome': encodeURIComponent(nome || 'allegato.pdf'), 'X-Dove': 'temporanei' } });
+      const percorso = await salvaTablet(blob, nome || 'allegato.pdf', 'temporanei');
       apriPercorso(percorso, blob.type || tipoDi(nome));
     }catch(e){
       console.error('Apertura file:', e);
