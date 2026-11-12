@@ -1150,6 +1150,14 @@ label.form-label{font-weight:550;}
 body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
 @media(pointer:coarse){ .gs-menu-lista button{min-height:46px;} }
 
+/* Visita: sezioni compilate, bozza salvata, frasi rapide sopra il campo */
+.editor-bozza{align-self:center;font-size:.78rem;color:var(--label4);white-space:nowrap;margin-right:4px;}
+.editor-bozza .ic{color:var(--green);}
+.editor-nav-btn.compilata::after{content:'';margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--green);flex:none;}
+.macro-wrap{margin:0 0 10px;gap:6px;}
+.edit-panel .macro-wrap{margin-top:0;}
+.macro-btn,.edit-panel .macro-btn{padding:5px 12px;border-radius:999px;font-size:.78rem;background:var(--surface2);border-color:var(--separator);color:var(--label2);transition:background .15s,color .15s,border-color .15s;}
+
 /* Menu a sole icone: tablet in verticale e finestre strette */
 @media(min-width:769px) and (max-width:1000px){
   aside{width:72px;}
@@ -2917,10 +2925,11 @@ body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
         </label>
       </div>
       <div style="display:flex;gap:8px;">
+        <span id="editor-bozza" class="editor-bozza" title="La visita in compilazione viene messa al sicuro da sola: se il programma si chiude la ritrovi alla riapertura"></span>
         <button class="btn btn-ghost" onclick="apriConsensoVisitaCorrente()" title="Consenso/i informato/i per questa visita">✍️ Consenso</button>
         <button class="btn btn-ghost" onclick="minimizeEditor()" title="Riduci a icona">➖ Riduci</button>
         <button class="btn btn-ghost" onclick="confermaAnnullaVisita()">Annulla</button>
-        <button class="btn btn-green" onclick="salvaVisita()">💾 Salva Referto</button>
+        <button class="btn btn-green" onclick="salvaVisita()" title="Salva il referto (Ctrl+S)">💾 Salva Referto</button>
       </div>
     </div>
     <div class="editor-body">
@@ -8349,6 +8358,7 @@ function renderDashboard(){
   DB.pazienti.forEach(p=>(p.visite||[]).forEach(v=>{if(v.data===oggi)visitOggi++;}));
   animaStatValue('stat-oggi', visitOggi);
   renderOggi(visitOggi);
+  bozzaControlla();
   renderAlertsHome();
   renderPromemoriaHome();
   renderPromemoriaScaduti();
@@ -10115,6 +10125,7 @@ function restoreEditor(){
 // Conferma prima di annullare la visita
 function confermaAnnullaVisita(){
   if(confirm('⚠️ Vuoi annullare la visita?\n\nLe modifiche non salvate andranno perse.')){
+    bozzaElimina();
     document.getElementById('editor-overlay').classList.remove('show');
     document.getElementById('editor-min-bar').classList.remove('show');
   }
@@ -10179,6 +10190,7 @@ function startEditor(tipo, vid=null){
   closeModal('modal-type');
   document.getElementById('editor-overlay').classList.add('show');
   curMode=tipo; curVisita=vid; _editorPazId=curPaz;
+  { const eb=document.getElementById('editor-bozza'); if(eb) eb.textContent=''; }
 
   // Reset campi di TUTTI i moduli (anche quelli non visibili, per sicurezza)
   document.querySelectorAll('#editor-overlay input:not([readonly]), #editor-overlay textarea, #editor-overlay select').forEach(el=>{
@@ -10256,7 +10268,100 @@ function setEditorTab(btn,id){
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.editor-nav-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  const cont=document.querySelector('#editor-overlay .editor-content'); if(cont) cont.scrollTop=0;
+  editorSegnaCompilate();
 }
+// Indice della visita: un pallino sulle sezioni in cui è già stato scritto qualcosa
+function editorSegnaCompilate(){
+  document.querySelectorAll('#editor-overlay .editor-nav-btn').forEach(b=>{
+    const m=(b.getAttribute('onclick')||'').match(/setEditorTab\(this,'([^']+)'\)/);
+    const pan=m && document.getElementById(m[1]);
+    if(!pan) return;
+    const piena=[...pan.querySelectorAll('textarea, input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([readonly])')].some(el=>!el.closest('.gs-data-box') ? (el.value||'').trim()!=='' : false)
+      || [...pan.querySelectorAll('input[type=date]')].some(el=>el.value);
+    b.classList.toggle('compilata', piena);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  BOZZA DELLA VISITA IN COMPILAZIONE
+// ═══════════════════════════════════════════════════
+// Mentre si scrive, la visita aperta viene messa al sicuro ogni pochi secondi
+// nello stesso deposito cifrato dell'archivio, ma in una voce A PARTE
+// («…:bozza-visita»): l'archivio delle pazienti non cambia formato e non viene
+// toccato finché non si preme «Salva Referto». Se il programma si chiude a
+// metà visita, alla riapertura si può riprenderla.
+let _bozzaTimer=null, _bozzaControllata=false;
+function _bozzaChiave(){ return gsDbStorageKey ? gsDbStorageKey+':bozza-visita' : null; }
+function _bozzaEditorAperto(){
+  return document.getElementById('editor-overlay').classList.contains('show') || document.getElementById('editor-min-bar').classList.contains('show');
+}
+function bozzaTocca(){
+  editorSegnaCompilate();
+  clearTimeout(_bozzaTimer);
+  _bozzaTimer=setTimeout(bozzaSalva, 1500);
+}
+async function bozzaSalva(){
+  const chiave=_bozzaChiave();
+  if(!chiave || !_bozzaEditorAperto() || _editorPazId==null) return;
+  try{
+    const dati = curMode==='ob' ? getObData() : curMode==='eco' ? getEcoData() : curMode==='gen' ? getGenData() : curMode==='pr' ? getProctData() : getGynoData();
+    const b={ pazId:_editorPazId, tipo:curMode, vid:curVisita||null, dataVisita:dataVisitaEditor()||null, gravidanzaId:curGravidanzaId||null, dati, quando:new Date().toISOString() };
+    await GS_STORAGE.archivio.scrivi(chiave, JSON.stringify(b));
+    if(!_bozzaEditorAperto()){ GS_STORAGE.archivio.scrivi(chiave,'').catch(()=>{}); return; } // salvata o annullata nel frattempo
+    const el=document.getElementById('editor-bozza');
+    if(el) el.textContent='✓ Bozza salvata '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ console.warn('Bozza non salvata', e); }
+}
+function bozzaElimina(){
+  clearTimeout(_bozzaTimer);
+  const el=document.getElementById('editor-bozza'); if(el) el.textContent='';
+  const chiave=_bozzaChiave();
+  if(chiave) Promise.resolve().then(()=>GS_STORAGE.archivio.scrivi(chiave,'')).catch(()=>{});
+}
+// All'apertura del programma: se c'è una visita rimasta a metà, propone di riprenderla.
+async function bozzaControlla(){
+  const chiave=_bozzaChiave();
+  if(_bozzaControllata || !chiave || !gsCurrentUser) return;
+  _bozzaControllata=true;
+  let b=null;
+  try{ const j=await GS_STORAGE.archivio.leggi(chiave); if(j) b=JSON.parse(j); }catch(e){ return; }
+  if(!b || !b.dati || _bozzaEditorAperto()) return;
+  const p=DB.pazienti.find(x=>x.id===b.pazId);
+  if(!p){ bozzaElimina(); return; }
+  const quando=new Date(b.quando).toLocaleString('it-IT',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  if(!confirm(`C'è una visita di ${p.cognome} ${p.nome} rimasta a metà (${quando}) e non salvata.\n\nOK per riprenderla, Annulla per scartarla.`)){ bozzaElimina(); return; }
+  openPaziente(p.id);
+  document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));
+  const vid = b.vid && p.visite.some(v=>v.id===b.vid && v.data===gsOggi()) ? b.vid : null;
+  startEditor(b.tipo, vid);
+  if(!document.getElementById('editor-overlay').classList.contains('show')) return;
+  if(b.tipo==='ob'){ setObData(b.dati); if(b.gravidanzaId) curGravidanzaId=b.gravidanzaId; }
+  else if(b.tipo==='eco'){ setEcoData(b.dati); if(b.gravidanzaId) curGravidanzaId=b.gravidanzaId; }
+  else if(b.tipo==='gen') setGenData(b.dati);
+  else if(b.tipo==='pr') setProctData(b.dati);
+  else { initGynoSelects(); setGynoData(b.dati); }
+  const dataEl=document.getElementById('editor-data-visita');
+  if(dataEl && b.dataVisita && b.dataVisita<=gsOggi()){ dataEl.value=b.dataVisita; dataEl.dispatchEvent(new Event('change')); }
+  editorSegnaCompilate();
+  bozzaTocca();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const ed=document.getElementById('editor-overlay');
+  if(!ed) return;
+  ['input','change'].forEach(ev=>ed.addEventListener(ev,bozzaTocca));
+  // frasi pronte e tendine scrivono nei campi senza «input»: basta il clic
+  ed.addEventListener('click',e=>{ if(e.target.closest('.editor-content')) bozzaTocca(); });
+  // Frasi rapide SOPRA il campo di testo: si vedono prima di cominciare a scrivere
+  ed.querySelectorAll('.macro-wrap').forEach(w=>{ const prima=w.previousElementSibling; if(prima && (prima.matches('textarea') || prima.querySelector('textarea'))) prima.before(w); });
+});
+// Ctrl+S (o Cmd+S) salva il referto quando la visita è aperta
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey) && !e.altKey && (e.key==='s'||e.key==='S')){
+    const ed=document.getElementById('editor-overlay');
+    if(ed && ed.classList.contains('show') && !document.querySelector('.overlay.show:not(#editor-overlay)')){ e.preventDefault(); salvaVisita(); }
+  }
+});
 
 // ═══════════════════════════════════════════════════
 //  PROMEMORIA AUTOMATICI DAL CAMPO "PROSSIMO CONTROLLO"
@@ -10663,6 +10768,7 @@ function salvaVisita(){
   creaPromemoriaDaProssimoControllo(p, v, testoProssimo);
 
   salvaDB();
+  bozzaElimina();
   closeModal('editor-overlay');
   document.getElementById('editor-min-bar').classList.remove('show');
   renderVisiteList(p);
