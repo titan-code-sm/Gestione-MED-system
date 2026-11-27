@@ -2248,6 +2248,12 @@ body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
       <span class="paz-allergie-tit">Allergie</span>
       <span id="allergie-banner-testo" style="white-space:pre-wrap;"></span>
     </div>
+    <!-- Rh NEGATIVO (dall'emogruppo della visita ostetrica): sempre in vista come le allergie -->
+    <div id="rh-banner" class="paz-allergie" style="display:none;">
+      <span>⚠️</span>
+      <span class="paz-allergie-tit">Emogruppo</span>
+      <span id="rh-banner-testo">Rh NEGATIVO</span>
+    </div>
   </div>
 
   <!-- Promemoria scaduti di questa paziente: una fascia nella pagina (prima era
@@ -3327,7 +3333,14 @@ body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
               <div class="field-row r3" style="margin-bottom:10px">
                 <div class="form-group"><label class="form-label">Età</label><input type="number" id="ob-eta" placeholder="anni"></div>
                 <div class="form-group"><label class="form-label">PARA</label><input id="ob-para" placeholder="es. 2002"></div>
-                <div class="form-group"><label class="form-label">Emogruppo</label><input id="ob-gruppo" placeholder="es. A Rh positivo" oninput=" obToggleImmuno()"></div>
+                <div class="form-group"><label class="form-label">Emogruppo</label>
+                  <div style="display:flex;gap:6px">
+                    <select id="ob-gruppo-abo" onchange="obComponiGruppo()" style="flex:1" aria-label="Gruppo sanguigno"><option value="">Gruppo</option><option>A</option><option>B</option><option>AB</option><option>0</option></select>
+                    <select id="ob-gruppo-rh" onchange="obComponiGruppo()" style="flex:1.4" aria-label="Fattore Rh"><option value="">Rh</option><option value="positivo">Rh positivo</option><option value="NEGATIVO">Rh NEGATIVO</option></select>
+                  </div>
+                  <input type="hidden" id="ob-gruppo">
+                  <div id="ob-rh-neg-avviso" style="display:none;margin-top:6px;font-size:.78rem;font-weight:700;color:var(--red)">⚠️ Rh NEGATIVO: comparirà l'avviso nella cartella della paziente</div>
+                </div>
               </div>
               <div class="form-group">
                 <label class="form-label">Tipo di Gravidanza</label>
@@ -3441,6 +3454,11 @@ body.dark-mode{--purple:#a78bfa;--teal:#38bdf8;}
                 <option data-full="Gravidanza seguita in consultorio con regolari controlli ed ecografie in gravidanza.">CF (Consultorio)</option>
               </select>
               <textarea id="ob-referto" rows="3" style="margin-top:6px"></textarea>
+            </div>
+
+            <div class="section-card">
+              <h4 data-icon="🧪">Esami · Esami eseguiti</h4>
+              <textarea id="ob-esami-lab" rows="2" placeholder="es. esami ematici del 3° trimestre nella norma..."></textarea>
             </div>
 
             <div class="section-card">
@@ -5111,11 +5129,14 @@ function _frasiCategorie(){
     return x._el.compareDocumentPosition(y._el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
   }));
 }
+const _TENDINE_ORDINE_CRESCENTE=['opz_ob-prescrizioni-txt'];
 function _tendinaApplica(c){
   const vuota=c.sel.querySelector('option:not([data-full])');
   c.sel.innerHTML='';
   if(vuota) c.sel.appendChild(vuota);
-  Object.entries(GD[c.id]||{}).forEach(([t,full])=>{ const o=document.createElement('option'); o.textContent=t; o.dataset.full=full; c.sel.appendChild(o); });
+  let voci=Object.entries(GD[c.id]||{});
+  if(_TENDINE_ORDINE_CRESCENTE.includes(c.id)) voci=voci.sort((x,y)=>x[0].localeCompare(y[0],'it',{numeric:true,sensitivity:'base'}));
+  voci.forEach(([t,full])=>{ const o=document.createElement('option'); o.textContent=t; o.dataset.full=full; c.sel.appendChild(o); });
 }
 // Firestore restituisce le voci di una sezione in ordine alfabetico: l'ordine
 // scelto dal medico viaggia a parte (pacchetto.ordine[id]) e qui si riapplica.
@@ -5316,7 +5337,7 @@ const OB_FIELDS=[
   'altezza','peso-pregrav','bmi','screening-cervicale','chirurgia','herpes','patologie',
   'terapie-atto','allergie','fumo','familiarita','partner',
   // Visita & Eco
-  'settimane','pressione','score-tev','peso','incremento','referto','esami-visite','esami-eco','vo',
+  'settimane','pressione','score-tev','peso','incremento','referto','esami-visite','esami-eco','esami-lab','vo',
   'ecografo','sonda','fattori-limitanti','eco1','eco23','eco3',
   // Consenso/i informato/i selezionato/i e firmato/i per questa visita (JSON: {titoli:[...],testoCombinato,nome,data,firma})
   'consenso-visita',
@@ -5355,7 +5376,7 @@ const OB_CAMPI_RIPORTATI=[
   'eta','para','gruppo','tipo-grav','um','durata-ciclo','epp','um-eco','epp-eco',
   'altezza','peso-pregrav','bmi','screening-cervicale','chirurgia','herpes','patologie',
   'terapie-atto','allergie','fumo','familiarita','partner',
-  'score-tev','esami-visite','esami-eco'];
+  'score-tev','esami-visite','esami-eco','esami-lab'];
 
 // GINECOLOGIA — campi riportati da una visita ginecologica precedente della
 // stessa paziente: dati costituzionali + anamnesi patologica + familiarità.
@@ -5434,9 +5455,39 @@ function appendOBText(id, text){ appendComboText(id, text); }
 
 // Mostra il box immunoprofilassi anti-D se l'emogruppo indica Rh negativo (per coerenza, anche se non sempre usato)
 function obToggleImmuno(){
-  const gruppo=(document.getElementById('ob-gruppo')?.value||'').toLowerCase();
+  const val=document.getElementById('ob-gruppo')?.value||'';
+  // Allinea le due tendine al valore salvato (anche per le visite vecchie,
+  // dove l'emogruppo era scritto a mano, es. «A Rh positivo», «0 neg»)
+  const p=_parseEmogruppo(val);
+  const abo=document.getElementById('ob-gruppo-abo'), rh=document.getElementById('ob-gruppo-rh');
+  if(abo) abo.value=p.abo;
+  if(rh) rh.value=p.rh;
+  const neg=p.rh==='NEGATIVO';
+  const avv=document.getElementById('ob-rh-neg-avviso'); if(avv) avv.style.display=neg?'block':'none';
   const box=document.getElementById('ob-immunoprofilassi-box');
-  if(box) box.style.display=(gruppo.includes('negativo')||gruppo.includes('rh-'))?'block':'none';
+  if(box) box.style.display=neg?'block':'none';
+}
+function obComponiGruppo(){
+  const abo=document.getElementById('ob-gruppo-abo')?.value||'';
+  const rh=document.getElementById('ob-gruppo-rh')?.value||'';
+  const el=document.getElementById('ob-gruppo'); if(!el) return;
+  el.value=[abo, rh?'Rh '+rh:''].filter(Boolean).join(' ');
+  obToggleImmuno();
+}
+// «A Rh positivo» → {abo:'A', rh:'positivo'}; riconosce anche «0-», «A neg», «Rh−»
+function _parseEmogruppo(val){
+  const t=String(val||'').trim();
+  const m=t.match(/^(AB|A|B|0|O)(?![a-z])/i);
+  const abo=m ? (m[1].toUpperCase()==='O'?'0':m[1].toUpperCase()) : '';
+  const neg=/neg|rh\s*[-−–]|^(AB|A|B|0|O)\s*[-−–]/i.test(t);
+  const pos=!neg && /pos|rh\s*\+|^(AB|A|B|0|O)\s*\+/i.test(t);
+  return {abo, rh: neg?'NEGATIVO':pos?'positivo':''};
+}
+// Rh negativo dall'ultima visita ostetrica che ha l'emogruppo compilato
+function _pazienteRhNegativo(p){
+  const ob=(p.visite||[]).filter(v=>v.tipo==='ob' && (v.obData||{}).gruppo && String(v.obData.gruppo).trim())
+    .sort((a,b)=>new Date(b.data)-new Date(a.data));
+  return ob.length ? _parseEmogruppo(ob[0].obData.gruppo).rh==='NEGATIVO' : false;
 }
 
 // EPP automatica dall'UM (regola di Naegele + correzione durata ciclo)
@@ -9216,6 +9267,15 @@ function _aggiornaAllergieBanner(p){
   } else {
     allBanner.style.display='none';
   }
+  const rhB=document.getElementById('rh-banner');
+  if(rhB){
+    const neg=_pazienteRhNegativo(p);
+    if(neg){
+      const ultima=(p.visite||[]).filter(v=>v.tipo==='ob' && (v.obData||{}).gruppo).sort((a,b)=>new Date(b.data)-new Date(a.data))[0];
+      document.getElementById('rh-banner-testo').textContent=(ultima?String(ultima.obData.gruppo).trim():'Rh NEGATIVO');
+    }
+    rhB.style.display=neg?'flex':'none';
+  }
 }
 
 // Piccolo riassunto testuale (non un referto: solo un paio di righe per
@@ -9986,19 +10046,22 @@ function confermaFarmaciSelezionatiVisita(ancheStampa){
       if(!p.farmaciManuali) p.farmaciManuali=[];
       const oggiIso=gsOggi();
       const inTerapiaVisite=document.getElementById('mfv-anche-terapia-visite')?.checked||false;
+      const rid = ancheStampa ? 'rx'+Date.now().toString(36) : null;
       scelti.forEach((f,i)=>{
         p.farmaciManuali.push({
           id:'fm'+Date.now().toString(36)+i,
-          farmaco:f.n, dosaggio:f.p, note:f.dose, daQuando:oggiIso, inTerapiaVisite
+          farmaco:f.n, dosaggio:f.p, note:f.dose, daQuando:oggiIso, inTerapiaVisite,
+          ...(rid?{ricettaId:rid}:{})
         });
       });
+      if(rid){
+        if(!p.ricette) p.ricette=[];
+        p.ricette.push({ id:rid, data:oggiIso, testo:formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, testo) });
+      }
       salvaDB();
       renderFarmaciAttuali(p);
       if(typeof gsToast==='function') gsToast('💊 Farmaci aggiunti alla terapia', 'gs-success');
-      if(ancheStampa){
-        const dataStr=new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
-        stampaRicettaConTesto(`${p.cognome} ${p.nome}`, dataStr, formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, testo));
-      }
+      if(rid) stampaRicettaDiPaziente(p.id, rid);
     }
     closeModal('modal-farmaci-visita');
     farmaciSelezionatiVisita.clear();
@@ -10016,7 +10079,17 @@ function confermaFarmaciSelezionatiVisita(ancheStampa){
     const nomeCompleto = p ? `${p.nome} ${p.cognome}` : '';
     const dataStr = new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
     const testoRicetta = formattaTerapiaComeRicetta(nomeCompleto, testo);
-    stampaRicettaConTesto(p?`${p.cognome} ${p.nome}`:'', dataStr, testoRicetta);
+    const campoId=_targetTerapiaFieldId;
+    let ultimaTerapia=testo;
+    stampaRicettaConTesto(p?`${p.cognome} ${p.nome}`:'', dataStr, testoRicetta, t=>{
+      // La correzione fatta sulla ricetta finisce anche nel campo Terapia della visita
+      const el=document.getElementById(campoId); if(!el) return;
+      const nuova=terapiaDaTestoRicetta(t);
+      if(el.value.includes(ultimaTerapia)) el.value=el.value.replace(ultimaTerapia, nuova);
+      else el.value=nuova;
+      ultimaTerapia=nuova;
+      try{ el.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){}
+    });
   }
   farmaciSelezionatiVisita.clear();
 }
@@ -10805,8 +10878,7 @@ function stampaRicettaPostVisita(){
   const p=DB.pazienti.find(x=>x.id===_postVisitaPazId);
   const v=p?.visite.find(x=>x.id===_postVisitaVid);
   if(!p||!v) return;
-  const dataStr=new Date(v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
-  stampaRicettaConTesto(`${p.cognome} ${p.nome}`, dataStr, formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, terapiaDiVisita(v)));
+  stampaRicettaDiVisita(p.id, v.id);
 }
 
 // Cambia scheda nella pagina Impostazioni (Profilo / Stampe / Funzionalità / Cartella)
@@ -11546,12 +11618,12 @@ function stampaRicettaVergine(){
   const testo=document.getElementById('rxv-testo').value.trim();
   if(!testo){ if(typeof gsToast==='function')gsToast('Scrivi la prescrizione prima di stampare','gs-error'); return; }
   const dataStr=data?new Date(data+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'}):'';
-  stampaRicettaConTesto(paziente,dataStr,testo);
+  stampaRicettaConTesto(paziente,dataStr,testo,t=>{ const el=document.getElementById('rxv-testo'); if(el) el.value=t; });
 }
 
 // Funzione condivisa: genera e stampa il layout classico della ricetta,
 // usato sia dalla Ricetta Vergine sia dal ricettario di una visita registrata.
-function stampaRicettaConTesto(paziente,dataStr,testo){
+function stampaRicettaConTesto(paziente,dataStr,testo,onModifica){
   const c=getPrintCfg(); const l=c.layout;
   const w=apriFinestraStampa(); if(!w) return;
   registraLog('stampa','Ricetta stampata');
@@ -11589,6 +11661,112 @@ function stampaRicettaConTesto(paziente,dataStr,testo){
     ${printFooterHtml()}
   </body></html>`);
   w.document.close();
+  _ricettaAgganciaSalvataggio(w, testo, onModifica);
+}
+
+// Le modifiche fatte a mano sul foglio della ricetta (testo modificabile)
+// vengono salvate: prima restavano solo sul foglio e, riaprendo o
+// ristampando, tornava la ricetta di prima. onModifica(testoNuovo) riceve il
+// testo corretto mentre si scrive e alla stampa/chiusura.
+function _ricettaAgganciaSalvataggio(w, testoIniziale, onModifica){
+  if(typeof onModifica!=='function') return;
+  let ultimo=(testoIniziale||'').trim(), timer=null;
+  const leggi=()=>{ try{ const el=w.document.querySelector('.rx-body'); return el ? (el.innerText||el.textContent||'').replace(/\u00a0/g,' ').replace(/\n{3,}/g,'\n\n').trim() : null; }catch(e){ return null; } };
+  const salva=()=>{ clearTimeout(timer); const t=leggi(); if(t==null || t===ultimo) return; ultimo=t; try{ onModifica(t); }catch(e){ console.warn('Ricetta:',e); } };
+  try{
+    const el=w.document.querySelector('.rx-body'); if(!el) return;
+    el.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(salva, 500); });
+    el.addEventListener('blur', salva);
+    w.addEventListener('beforeprint', salva);
+    w.addEventListener('pagehide', salva);
+    w.addEventListener('beforeunload', salva);
+    // Nel programma per PC il foglio è un pannello: close() viene sostituito
+    // dopo il caricamento, quindi salviamo anche dal pulsante «Chiudi».
+    w.document.querySelectorAll('button').forEach(b=>b.addEventListener('click', salva, true));
+  }catch(e){ console.warn('Ricetta:',e); }
+}
+
+// Dal testo di una ricetta (anche corretto a mano) ricava la terapia: toglie
+// la frase «Si prescrive alla paziente … la seguente terapia:» e i trattini.
+function terapiaDaTestoRicetta(testo){
+  let t=(testo||'').replace(/\r/g,'').trim();
+  t=t.replace(/^\s*Si prescrive alla paziente[^\n]*?terapia\s*:?\s*\n*/i,'');
+  const righe=t.split('\n').map(r=>r.trim()).filter(Boolean).map(r=>r.replace(/^[—–-]\s*/,''));
+  if(righe.length>1) return righe.map(r=>r.replace(/\.\s*$/,'')).join('\n');
+  return righe.join('\n');
+}
+
+function _setTerapiaDiVisita(v, terapia){
+  const k={ob:'obData',eco:'ecoData',gen:'genData',pr:'prData'}[v.tipo]||'gynoData';
+  if(!v[k]) v[k]={};
+  v[k].terapia=terapia;
+}
+
+// Testo della ricetta di una visita: quello corretto a mano, se c'è e la
+// terapia della visita non è cambiata dopo; altrimenti quello generato.
+function testoRicettaDiVisita(p, v){
+  const ter=terapiaDiVisita(v);
+  if(v.ricettaTesto && (v.ricettaTerapia||'')===ter) return v.ricettaTesto;
+  return formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, ter);
+}
+
+// Salva sulla visita la ricetta corretta a mano e aggiorna la terapia, così
+// la modifica si vede nel ricettario, nei farmaci attuali e nel referto.
+function salvaRicettaModificataVisita(pazId, vid, testoNuovo){
+  const p=DB.pazienti.find(x=>x.id===pazId);
+  const v=p?.visite?.find(x=>x.id===vid);
+  if(!v) return;
+  const ter=terapiaDaTestoRicetta(testoNuovo);
+  _setTerapiaDiVisita(v, ter);
+  v.ricettaTesto=testoNuovo;
+  v.ricettaTerapia=ter;
+  salvaDB();
+  _ricettaRiaggiornaViste(p);
+}
+
+function _ricettaRiaggiornaViste(p){
+  try{ if(curPaz===p.id && typeof renderFarmaciAttuali==='function') renderFarmaciAttuali(p); }catch(e){}
+  try{ if(document.getElementById('sec-ricettario')?.classList.contains('active')) renderRicettario(); }catch(e){}
+  try{ if(curPaz===p.id && typeof renderVisiteList==='function') renderVisiteList(p); }catch(e){}
+  try{ const rv=document.getElementById('m-ricettario-visita'); if(rv && rv.classList.contains('show') && rv.dataset.pazId==String(p.id)){ const v=rv.dataset.vid?p.visite.find(x=>String(x.id)===rv.dataset.vid):null; const r=rv.dataset.rid?(p.ricette||[]).find(x=>x.id===rv.dataset.rid):null; if(v) document.getElementById('rv-body').textContent=testoRicettaDiVisita(p,v); else if(r) document.getElementById('rv-body').textContent=r.testo; } }catch(e){}
+}
+
+// Ricetta stampata dalla visita: apre il foglio e salva le correzioni.
+function stampaRicettaDiVisita(pazId, vid){
+  const p=DB.pazienti.find(x=>x.id===pazId);
+  const v=p?.visite?.find(x=>x.id===vid);
+  if(!p||!v) return;
+  const dataStr=new Date(v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  stampaRicettaConTesto(`${p.cognome} ${p.nome}`, dataStr, testoRicettaDiVisita(p,v), t=>salvaRicettaModificataVisita(pazId, vid, t));
+}
+
+// Ricette fatte dalla cartella (box «Farmaci attuali»), senza visita: sono
+// salvate nella paziente (p.ricette) e compaiono nel Ricettario.
+function stampaRicettaDiPaziente(pazId, rid){
+  const p=DB.pazienti.find(x=>x.id===pazId);
+  const r=p?.ricette?.find(x=>x.id===rid);
+  if(!p||!r) return;
+  const dataStr=new Date(r.data+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  stampaRicettaConTesto(`${p.cognome} ${p.nome}`, dataStr, r.testo, t=>salvaRicettaModificataPaziente(pazId, rid, t));
+}
+function salvaRicettaModificataPaziente(pazId, rid, testoNuovo){
+  const p=DB.pazienti.find(x=>x.id===pazId);
+  const r=p?.ricette?.find(x=>x.id===rid);
+  if(!r) return;
+  r.testo=testoNuovo;
+  // Aggiorna anche i farmaci attuali nati da questa ricetta
+  const righe=terapiaDaTestoRicetta(testoNuovo).split('\n').map(x=>x.trim().replace(/\.\s*$/,'')).filter(Boolean);
+  const vecchi=(p.farmaciManuali||[]).filter(f=>f.ricettaId===rid);
+  const inTer=vecchi.length ? vecchi[0].inTerapiaVisite : true;
+  const daQuando=vecchi.length ? vecchi[0].daQuando : r.data;
+  p.farmaciManuali=(p.farmaciManuali||[]).filter(f=>f.ricettaId!==rid);
+  righe.forEach((riga,i)=>{
+    const m=riga.match(/^(.+?)\s*\(([^()]*)\)\s*[—–-]\s*(.+)$/);
+    p.farmaciManuali.push({ id:'fm'+Date.now().toString(36)+i, ricettaId:rid,
+      farmaco:m?m[1].trim():riga, dosaggio:m?m[2].trim():'', note:m?m[3].trim():'', daQuando, inTerapiaVisite:inTer });
+  });
+  salvaDB();
+  _ricettaRiaggiornaViste(p);
 }
 
 // ═══════════════════════════════════════════════════
@@ -13055,33 +13233,30 @@ function _firmaConferma(){
   if(cb) cb(dataUrl);
 }
 
-// Mostra la terapia di UNA visita specifica (icona 💊📋 nella lista visite della cartella).
-function apriRicettarioVisita(vid){
-  const p=DB.pazienti.find(x=>x.id===curPaz);
-  const v=p?.visite.find(x=>x.id===vid);
-  if(!v)return;
-  const testoRicetta=formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, terapiaDiVisita(v));
-  const dataStr=new Date(v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('rv-title').textContent=`💊 Ricettario · ${p.cognome} ${p.nome}`;
-  document.getElementById('rv-subtitle').textContent=dataStr;
-  document.getElementById('rv-body').textContent=testoRicetta||'Nessuna terapia registrata per questa visita.';
-  document.getElementById('rv-print-btn').onclick=()=>stampaRicettaConTesto(`${p.cognome} ${p.nome}`,dataStr,testoRicetta);
-  document.getElementById('m-ricettario-visita').classList.add('show');
+// Mostra la ricetta di UNA visita specifica (pulsante 💊 nella lista visite).
+function apriRicettarioVisita(vid){ apriRicettarioVisitaGlobale(curPaz, vid); }
+
+// Tutte le ricette: quelle delle visite e quelle fatte dalla cartella.
+function _elencoRicette(){
+  const righe=[];
+  DB.pazienti.forEach(p=>{
+    (p.visite||[]).forEach(v=>{
+      const terapia=terapiaDiVisita(v);
+      if(terapia && terapia.trim()) righe.push({p,v,data:v.data,terapia,testoRicetta:testoRicettaDiVisita(p,v)});
+    });
+    (p.ricette||[]).forEach(r=>{
+      if(r.testo && r.testo.trim()) righe.push({p,r,data:r.data+'T12:00:00',terapia:terapiaDaTestoRicetta(r.testo),testoRicetta:r.testo});
+    });
+  });
+  righe.sort((a,b)=>new Date(b.data)-new Date(a.data));
+  return righe;
 }
 
 // Sezione Ricettario aggregata: tutte le terapie di tutte le pazienti, più recenti prima.
 function renderRicettario(){
   const search=(document.getElementById('ricettario-search')?.value||'').toLowerCase().trim();
   const c=document.getElementById('ricettario-list');
-  const righe=[];
-  DB.pazienti.forEach(p=>{
-    (p.visite||[]).forEach(v=>{
-      const terapia=terapiaDiVisita(v);
-      if(terapia && terapia.trim()) righe.push({p,v,terapia,testoRicetta:formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`,terapia)});
-    });
-  });
-  righe.sort((a,b)=>new Date(b.v.data)-new Date(a.v.data));
-
+  const righe=_elencoRicette();
   const filtrate=search
     ? righe.filter(r=>(`${r.p.nome} ${r.p.cognome}`.toLowerCase().includes(search)) || r.terapia.toLowerCase().includes(search))
     : righe;
@@ -13092,19 +13267,33 @@ function renderRicettario(){
   }
 
   const TIPO_ICON={gyno:'🌸',ob:'🤰',eco:'🖥️',gen:'🩺',pr:'🔍'};
-  c.innerHTML=filtrate.map(r=>`
+  c.innerHTML=filtrate.map(r=>{
+    const apri=r.v?`apriRicettarioVisitaGlobale(${r.p.id},${r.v.id})`:`apriRicettaPazienteGlobale(${r.p.id},'${r.r.id}')`;
+    const stampaDiretta=r.v?`stampaRicettaDiVisita(${r.p.id},${r.v.id})`:`stampaRicettaDiPaziente(${r.p.id},'${r.r.id}')`;
+    const icona=r.v?(TIPO_ICON[r.v.tipo]||'🌸'):'🧾';
+    return `
     <div class="visit-item">
       <div class="visit-icon" style="background:var(--primary-dim)">💊</div>
       <div class="visit-info">
-        <div class="visit-date" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted" onclick="openPaziente(${r.p.id})">${r.p.cognome} ${r.p.nome}</div>
-        <div class="visit-type">${TIPO_ICON[r.v.tipo]||'🌸'} ${new Date(r.v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}</div>
-        <div class="visit-diag">${r.terapia.length>120?r.terapia.slice(0,120)+'…':r.terapia}</div>
+        <div class="visit-date" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted" onclick="openPaziente(${r.p.id})">${_escHtml(r.p.cognome)} ${_escHtml(r.p.nome)}</div>
+        <div class="visit-type">${icona} ${new Date(r.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}</div>
+        <div class="visit-diag">${_escHtml(r.terapia.length>120?r.terapia.slice(0,120)+'…':r.terapia)}</div>
       </div>
       <div class="visit-actions">
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="apriRicettarioVisitaGlobale(${r.p.id},${r.v.id})" title="Vedi e stampa">💊📋</button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="stampaRicettaConTesto('${r.p.cognome} ${r.p.nome}','${new Date(r.v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}',\`${r.testoRicetta.replace(/`/g,"'")}\`)" title="Stampa direttamente">🖨️</button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="${apri}" title="Vedi e stampa">💊📋</button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="${stampaDiretta}" title="Stampa direttamente">🖨️</button>
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
+}
+
+function _mostraRicettarioModal(p, titoloData, testo, stampaFn, chiave){
+  document.getElementById('rv-title').textContent=`💊 Ricettario · ${p.cognome} ${p.nome}`;
+  document.getElementById('rv-subtitle').textContent=titoloData;
+  document.getElementById('rv-body').textContent=testo||'Nessuna terapia registrata per questa visita.';
+  document.getElementById('rv-print-btn').onclick=stampaFn;
+  const m=document.getElementById('m-ricettario-visita');
+  m.dataset.pazId=String(p.id); m.dataset.vid=chiave.vid!=null?String(chiave.vid):''; m.dataset.rid=chiave.rid||'';
+  m.classList.add('show');
 }
 
 // Come apriRicettarioVisita ma richiamabile dalla sezione aggregata (curPaz potrebbe non essere impostato)
@@ -13112,13 +13301,15 @@ function apriRicettarioVisitaGlobale(pazId,vid){
   const p=DB.pazienti.find(x=>x.id===pazId);
   const v=p?.visite.find(x=>x.id===vid);
   if(!v)return;
-  const testoRicetta=formattaTerapiaComeRicetta(`${p.nome} ${p.cognome}`, terapiaDiVisita(v));
   const dataStr=new Date(v.data).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('rv-title').textContent=`💊 Ricettario · ${p.cognome} ${p.nome}`;
-  document.getElementById('rv-subtitle').textContent=dataStr;
-  document.getElementById('rv-body').textContent=testoRicetta||'Nessuna terapia registrata per questa visita.';
-  document.getElementById('rv-print-btn').onclick=()=>stampaRicettaConTesto(`${p.cognome} ${p.nome}`,dataStr,testoRicetta);
-  document.getElementById('m-ricettario-visita').classList.add('show');
+  _mostraRicettarioModal(p, dataStr, testoRicettaDiVisita(p,v), ()=>stampaRicettaDiVisita(pazId,vid), {vid});
+}
+function apriRicettaPazienteGlobale(pazId,rid){
+  const p=DB.pazienti.find(x=>x.id===pazId);
+  const r=p?.ricette?.find(x=>x.id===rid);
+  if(!r)return;
+  const dataStr=new Date(r.data+'T12:00:00').toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  _mostraRicettarioModal(p, dataStr, r.testo, ()=>stampaRicettaDiPaziente(pazId,rid), {rid});
 }
 
 // ═══════════════════════════════════════════════════
@@ -13155,8 +13346,8 @@ function _gsMisureFoglio(l){
   return {formato:f, margine:m, larghezza, altezza};
 }
 // MODELLO DEL REFERTO (1.8.11): identico al modello Word dello studio
-// (Dott.docx). Calibri 11 pt nero, margini 1,27 cm, logo a sinistra e dati del
-// medico a destra, due linee turchesi #1BD9C2 da 1,5 pt, dati della paziente
+// (Dott.docx). Calibri 11 pt nero, margini 1,27 cm, logo a destra (dalla 1.9.1) e dati del
+// medico a sinistra, due linee turchesi #1BD9C2 da 1,5 pt, dati della paziente
 // a 12 pt, titolo in grassetto 14 pt al centro, sezioni in MAIUSCOLO grassetto
 // 12 pt separate da una riga vuota, firma in corsivo con la riga «____».
 // Font, colore e corpo delle Impostazioni di stampa restano per ricetta e
@@ -13200,6 +13391,10 @@ function _gsCssDocumento(l, M){
 .gs-riga{font-size:12pt;overflow-wrap:anywhere;}
 .gs-riga b{font-weight:400;}
 .gs-riga.gr b{font-weight:700;}
+.gs-riga.sp{padding-top:1.32em;}
+.gs-riga.tgr,.gs-riga.tgr b{font-weight:700;}
+.gs-riga.nota{font-size:10pt;font-style:italic;}
+.gs-riga.nota b{font-weight:400;}
 .gs-firma{display:flex;justify-content:flex-end;padding-top:40px;font-style:italic;}
 .gs-firma>div{text-align:center;min-width:6cm;}
 .gs-firma .fl{margin-top:2px;letter-spacing:0;}
@@ -13219,12 +13414,16 @@ function _gsBlocchiReferto(v, c, perCartella){
   getRefertoSezioni(v).forEach(s=>{
     const valid=s.rows.filter(r=>r[1]&&String(r[1]).trim());
     if(!valid.length) return;
-    b.push({html:`<div class="gs-sez">${_escHtml(s.title)}</div>`, lega:true});
+    // Sezioni senza titolo (es. conclusioni ostetriche su una riga): la riga
+    // vuota prima la mette la prima riga.
+    if(!s.senzaTitolo) b.push({html:`<div class="gs-sez">${_escHtml(s.title)}</div>`, lega:true});
     // Nel Word le voci di esame obiettivo ed ecografia sono in grassetto.
     const gr=/esame obiettivo|ecograf|biometria|doppler/i.test(s.title);
-    valid.forEach(r=>{
+    valid.forEach((r,ri)=>{
+      const o=r[2]||{};
+      const sp=!!(o.spazio || (s.senzaTitolo && ri===0));
       String(r[1]).replace(/\r/g,'').replace(/\s+$/,'').split('\n').forEach((t,k)=>{
-        b.push({etichetta:(k===0&&r[0])?r[0]:'', testo:t, cont:k>0, gr});
+        b.push({etichetta:(k===0&&r[0])?r[0]:'', testo:t, cont:k>0, gr:o.etichettaGr!=null?o.etichettaGr:gr, stile:o.stile||'', sp:sp&&k===0});
       });
     });
   });
@@ -13237,10 +13436,11 @@ function _gsBlocchiReferto(v, c, perCartella){
 // i dati della paziente a sinistra e la data a destra, poi l'altra linea.
 function _gsBlocchiIntestazione(p, c, etichettaData, dataStr){
   const i=c.intestazione;
+  // Dalla 1.9.1 il logo sta a destra e i dati del medico a sinistra.
   const logo=i.logo && c.layout.logo!==false ? `<img src="${i.logo}" alt="">` : '<span></span>';
   const righe=[i.nome, i.spec, i.indirizzo, i.contatti].flatMap(x=>String(x||'').split(/\r?\n/)).map(x=>x.trim()).filter(Boolean);
   return [
-    {html:`<div><div class="gs-int">${logo}<div class="dx">${righe.map(r=>`<div>${_escHtml(r)}</div>`).join('')}</div></div><div class="gs-linea l1"></div></div>`, lega:true},
+    {html:`<div><div class="gs-int"><div class="sx">${righe.map(r=>`<div>${_escHtml(r)}</div>`).join('')}</div>${logo}</div><div class="gs-linea l1"></div></div>`, lega:true},
     {html:`<div><div class="gs-paz">
       <div><div>${_escHtml(`${p.nome} ${p.cognome}`)}</div><div>Data di nascita: ${_escHtml(_gsDataIt(p.nascita))}</div><div>CF: ${_escHtml(p.cf||'–')}</div></div>
       <div class="dx">${_escHtml(etichettaData)}: ${_escHtml(dataStr)}</div>
@@ -13251,7 +13451,8 @@ function _gsElementoBlocco(b){
   const t=document.createElement('template');
   if(b.testo!=null){
     const et=b.etichetta?`<b>${_escHtml(b.etichetta)}:</b> `:'';
-    t.innerHTML=`<div class="gs-riga${b.cont?' cont':''}${b.gr?' gr':''}">${et}${b.testo.trim()?_escHtml(b.testo):'&nbsp;'}</div>`;
+    const st=b.stile==='nota'?' nota':b.stile==='grassetto'?' tgr':'';
+    t.innerHTML=`<div class="gs-riga${b.cont?' cont':''}${b.gr?' gr':''}${st}${b.sp?' sp':''}">${et}${b.testo.trim()?_escHtml(b.testo):'&nbsp;'}</div>`;
   } else t.innerHTML=b.html.trim();
   const el=t.content.firstElementChild;
   if(b.lega) el.dataset.lega='1';
@@ -13297,7 +13498,7 @@ async function _gsImpagina(contenitore, documenti, opz){
     }
     if(el) el.remove();
     if(!meglio) return null;
-    return [{...b, testo:parole.slice(0,meglio).join(' ')}, {etichetta:'', testo:parole.slice(meglio).join(' '), cont:true, gr:b.gr}];
+    return [{...b, testo:parole.slice(0,meglio).join(' ')}, {...b, etichetta:'', testo:parole.slice(meglio).join(' '), cont:true, sp:false}];
   };
   documenti.forEach((blocchi,di)=>{
     if(di===0 || corpo.children.length) nuovaPagina();
@@ -13544,6 +13745,34 @@ function esportaCartellaPDF(){
 // (_gsBlocchiReferto): un'unica fonte per i campi di ogni tipo di visita,
 // così le due non possono disallinearsi. Chi la consuma filtra da sé le
 // righe vuote — qui i valori sono semplicemente presenti o assenti.
+// Data sempre come 22/02/2026 (accetta 2026-02-22, 22/2/2026, oggetti Date…)
+function _refData(x){
+  if(!x) return '';
+  const t=String(x).trim();
+  let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[3].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[1]}`;
+  m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if(m) return `${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3].length===2?'20'+m[3]:m[3]}`;
+  const d=new Date(t);
+  return isNaN(d)?t:`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+// Più voci sulla stessa riga: «Altezza: 165 cm, Peso: 60 kg, BMI: 22.0»
+function _refInRiga(coppie){
+  return coppie.filter(c=>c[1]&&String(c[1]).trim()).map(c=>`${c[0]}: ${String(c[1]).trim()}`).join(', ');
+}
+// «Regolare con cicli…» → «regolare con cicli…» (non tocca le sigle)
+function _refMinuscola(x){
+  const t=String(x||'').trim().replace(/[.;,]\s*$/,'');
+  return /^[A-ZÀ-Ý][a-zà-ÿ]/.test(t) ? t[0].toLowerCase()+t.slice(1) : t;
+}
+// Titolo dell'ecografia: «Ecografia (Voluson S10 - Sonda TV)»
+function _refTitoloEco(ecografo, sonda, sep){
+  const so=String(sonda||'').trim();
+  const parti=[String(ecografo||'').trim(), so ? (/^sonda\b/i.test(so)?so:'Sonda '+so) : ''].filter(Boolean);
+  return 'Ecografia'+(parti.length?' ('+parti.join(sep)+')':'');
+}
+const _REF_FONTE_DOPPLER='Valori di riferimento: Fetal Medicine Barcelona (fetalmedicinebarcelona.org/calc).';
+
 function getRefertoSezioni(v){
   if(v.tipo==='pr'){
     const r=v.prData||{};
@@ -13578,64 +13807,63 @@ function getRefertoSezioni(v){
   }
   if(v.tipo==='ob'){
     const o=v.obData||{};
-    const epoca=parseSettimaneEsatte(o['bio-epoca']);
-    const pBpd=epoca?intergrowthPercentile(INTERGROWTH_BPD,epoca,parseFloat(o['bio-bpd'])):null;
-    const pHc=epoca?intergrowthPercentile(INTERGROWTH_HC,epoca,parseFloat(o['bio-hc'])):null;
-    const pAc=epoca?intergrowthPercentile(INTERGROWTH_AC,epoca,parseFloat(o['bio-ac'])):null;
-    const pFl=epoca?intergrowthPercentile(INTERGROWTH_FL,epoca,parseFloat(o['bio-fl'])):null;
-    const fmt=(val,perc,unit)=>val?`${val} ${unit}${perc?' ('+perc+' pc)':''}`:'';
-    const strum=[o.ecografo,o.sonda].filter(Boolean).join(' · ');
+    const pieno=r=>r[1]&&String(r[1]).trim();
+    // Esami: in quest'ordine, con una riga vuota prima del gruppo
+    const esami=[['ECOGRAFIE',o['esami-eco']],['ESAMI',o['esami-lab']],['VISITE/CONSULENZE',o['esami-visite']]].filter(pieno);
+    if(esami.length) esami[0][2]={spazio:true};
+    const sezEco={icon:'',title:_refTitoloEco(o.ecografo,o.sonda,', '),rows:[
+      ['Fattori limitanti',o['fattori-limitanti']],['Eco I trimestre',o.eco1],['Eco II-III trimestre',o.eco23],['Eco III trimestre',o.eco3]
+    ]};
+    // Biometria e peso fetale: solo i valori, senza percentili
+    const sezBio={icon:'',title:'Biometria Fetale',rows:[
+      ['Epoca',o['bio-epoca']],
+      ['DBP',o['bio-bpd']?o['bio-bpd']+' mm':''],['CC',o['bio-hc']?o['bio-hc']+' mm':''],
+      ['CA',o['bio-ac']?o['bio-ac']+' mm':''],['LF',o['bio-fl']?o['bio-fl']+' mm':''],
+      ['Peso fetale stimato',o['bio-peso']?o['bio-peso']+' gr':'']
+    ]};
+    // Doppler: solo i valori (niente percentili né normale/patologico) e la
+    // fonte dei valori di riferimento, la stessa del link nella compilazione
+    const sezDop={icon:'',title:'Velocimetria Doppler',rows:[
+      ['Arteria Ombelicale (AO) — PI', o['doppler-ua-pi']],
+      ['Arteria Cerebrale Media (ACM) — PI', o['doppler-mca-pi']],
+      ['CPR (ACM-PI / AO-PI)', o['doppler-cpr']],
+      ['Arteria Uterina destra — PI', o['doppler-uta-dx']],
+      ['Arteria Uterina sinistra — PI', o['doppler-uta-sx']],
+      ['Arterie Uterine — media PI', o['doppler-uta-media']],
+      ['Note Doppler', o['doppler-note']]
+    ]};
+    if(sezDop.rows.some(pieno)) sezDop.rows.push(['',_REF_FONTE_DOPPLER,{stile:'nota'}]);
+    // Informativa subito sotto l'ultima tra ecografia, biometria e doppler compilate
+    const sezInfo={icon:'',title:'Informativa',senzaTitolo:true,rows:[]};
+    if(o.informativa){
+      const riga=['',GD.informativa,{stile:'nota',spazio:true}];
+      const dove=[sezDop,sezBio,sezEco].find(x=>x.rows.some(pieno));
+      (dove||sezInfo).rows.push(riga);
+    }
     return [
       {icon:'',title:'Anamnesi',rows:[
-        ['Età',o.eta],['PARA',o.para],['Emogruppo',o.gruppo],['Tipo gravidanza',o['tipo-grav']],
-        ['UM',o.um?new Date(o.um).toLocaleDateString('it-IT'):''],['Durata ciclo',o['durata-ciclo']?o['durata-ciclo']+' gg':''],['EPP',o.epp],
-        ['UM ecografica',o['um-eco']?new Date(o['um-eco']).toLocaleDateString('it-IT'):''],['EPP ecografica',o['epp-eco']],
-        ['Altezza',o.altezza?o.altezza+' cm':''],['Peso pregravidico',o['peso-pregrav']?o['peso-pregrav']+' kg':''],['BMI',o.bmi],
+        ['Età',o.eta],['PARA',o.para],['Emogruppo',o.gruppo],['',o['tipo-grav']],
+        ['UM',_refData(o.um)],['EPP',_refData(o.epp)],
+        ['UM ecografica',_refData(o['um-eco'])],['EPP ecografica',_refData(o['epp-eco'])],
+        ['',_refInRiga([['Altezza',o.altezza?o.altezza+' cm':''],['Peso pregravidico',o['peso-pregrav']?o['peso-pregrav']+' kg':''],['BMI pregravidico',o.bmi]])],
         ['Screening cervicale',o['screening-cervicale']],['Interventi chirurgici',o.chirurgia],['Herpes genitale',o.herpes],
         ['Patologie',o.patologie],['Terapie in atto',o['terapie-atto']],['Allergie',o.allergie],
         ['Fumo',o.fumo],['Familiarità',o.familiarita],['Anamnesi partner',o.partner]
       ]},
       {icon:'',title:'Visita Ostetrica',rows:[
         ['Settimane',o.settimane],['PA',o.pressione],['Score TEV',o['score-tev']],
-        ['Peso attuale',o.peso?o.peso+' kg':''],['Incremento ponderale',o.incremento],
-        ['Referto anamnestico',o.referto],['Esami · visite/consulenze',o['esami-visite']],['Esami · ecografie',o['esami-eco']],['Visita ostetrica (VO)',o.vo]
+        ['',_refInRiga([['Peso attuale',o.peso?o.peso+' kg':''],['Incremento ponderale',o.incremento]])],
+        ['',o.referto,{spazio:true}],
+        ...esami,
+        ['Visita ostetrica',o.vo,{spazio:true,etichettaGr:true}]
       ]},
-      {icon:'',title:'Ecografia'+(strum?' ('+strum+')':''),rows:[
-        ['Fattori limitanti',o['fattori-limitanti']],['Eco I trimestre',o.eco1],['Eco II-III trimestre',o.eco23],['Eco III trimestre',o.eco3]
-      ]},
-      {icon:'',title:'Biometria Fetale',rows:[
-        ['Epoca',o['bio-epoca']],
-        ['DBP',fmt(o['bio-bpd'],pBpd,'mm')],['CC',fmt(o['bio-hc'],pHc,'mm')],
-        ['CA',fmt(o['bio-ac'],pAc,'mm')],['LF',fmt(o['bio-fl'],pFl,'mm')],
-        ['Peso fetale stimato',(()=>{
-          if(!o['bio-peso'])return '';
-          const pp=epoca!==null?efwPercentile(epoca,parseFloat(o['bio-peso'])):null;
-          const man=o['bio-peso-perc']?' ('+o['bio-peso-perc']+' pc)':'';
-          return o['bio-peso']+' gr'+man+(pp?` — ≈ ${pp} percentile INTERGROWTH-21st (orientativo)`:'');
-        })()]
-      ]},
-      {icon:'',title:'Velocimetria Doppler',rows:(()=>{
-        const dv=(tab,val,verso)=>{
-          const r=(epoca!==null&&val)?dopplerValuta(tab,epoca,parseFloat(val),verso):null;
-          return r?` — ${r.perc}, ${r.esito}`:'';
-        };
-        return [
-          ['Arteria Ombelicale (AO) — PI', o['doppler-ua-pi']?o['doppler-ua-pi']+dv(DOPPLER_UA_PI,o['doppler-ua-pi'],'alto'):''],
-          ['Arteria Cerebrale Media (ACM) — PI', o['doppler-mca-pi']?o['doppler-mca-pi']+dv(DOPPLER_MCA_PI,o['doppler-mca-pi'],'basso'):''],
-          ['CPR (ACM-PI / AO-PI)', o['doppler-cpr']?o['doppler-cpr']+dv(DOPPLER_CPR,o['doppler-cpr'],'basso'):''],
-          ['Arteria Uterina destra — PI', o['doppler-uta-dx']],
-          ['Arteria Uterina sinistra — PI', o['doppler-uta-sx']],
-          ['Arterie Uterine — media PI', o['doppler-uta-media']?o['doppler-uta-media']+dv(DOPPLER_UTA_PI,o['doppler-uta-media'],'alto'):''],
-          ['Note Doppler', o['doppler-note']]
-        ];
-      })()},
+      sezEco, sezBio, sezDop, sezInfo,
       {icon:'',title:'Note Ecografiche',rows:[['Note',o['note-eco']]]},
-      {icon:'',title:'Counselling',rows:[['Counselling',o['counselling-txt']]]},
-      {icon:'',title:'Prescrizioni Esami',rows:[['Prescrizioni',o['prescrizioni-txt']]]},
-      {icon:'',title:'Terapia',rows:[['Terapia',o.terapia]]},
-      {icon:'',title:'Conclusioni',rows:[['Conclusioni',o.diagnosi]]},
-      {icon:'',title:'Controlli',rows:[['Prossimo controllo',o.prossimo]]},
-      {icon:'',title:'Informativa',rows:[['Nota',o.informativa?GD.informativa:'']]}
+      {icon:'',title:'Counselling',senzaTitolo:true,rows:[['',o['counselling-txt']]]},
+      {icon:'',title:'Prescrizioni Esami',rows:[['',o['prescrizioni-txt']]]},
+      {icon:'',title:'Terapia',rows:[['Si prescrive',o.terapia]]},
+      {icon:'',title:'Conclusioni',senzaTitolo:true,rows:[['CONCLUSIONI',o.diagnosi,{stile:'grassetto'}]]},
+      {icon:'',title:'Controlli',rows:[['',o.prossimo]]}
     ];
   }
 
@@ -13700,29 +13928,28 @@ function getRefertoSezioni(v){
   const g=v.gynoData||{};
   let bmi='';
   if(g.altezza&&g.peso){bmi=(parseFloat(g.peso)/Math.pow(parseFloat(g.altezza)/100,2)).toFixed(1)+' kg/m²';}
-  const ecoStrum=[g.ecografo,g.sonda].filter(Boolean).join(' · ');
+  // Ciclo su una riga: «Ciclo: regolare con cicli ogni 24-38 gg, durata normale (≤ 8 gg), flusso scarso»
+  const ciclo=[g['ciclo-ritmo'],g['ciclo-durata'],g['ciclo-quantita']].map(_refMinuscola).filter(Boolean).join(', ');
   return [
-    {icon:'',title:'Dati Generali',rows:[
-      ['Età',g.eta],['Altezza',g.altezza?g.altezza+' cm':''],['Peso',g.peso?g.peso+' kg':''],
-      ['BMI',bmi],['PARA',g.para],['Menarca',g.menarca],
-      ['UM',g.um?new Date(g.um).toLocaleDateString('it-IT'):''],['PA',g.pa?g.pa+' mmHg':''],['Menopausa',g.menopausa]
-    ]},
-    {icon:'',title:'Ciclo & Sintomi',rows:[
-      ['Ciclo ritmo',g['ciclo-ritmo']],['Ciclo durata',g['ciclo-durata']],['Ciclo quantità',g['ciclo-quantita']],
+    // Anamnesi: dati generali, ciclo e sintomi, screening e anamnesi insieme
+    {icon:'',title:'Anamnesi',rows:[
+      ['Età',g.eta],
+      ['',_refInRiga([['Altezza',g.altezza?g.altezza+' cm':''],['Peso',g.peso?g.peso+' kg':''],['BMI',bmi]])],
+      ['PARA',g.para],['Menarca',g.menarca],
+      ['UM',_refData(g.um)],['PA',g.pa?g.pa+' mmHg':''],['Menopausa',g.menopausa],
+      ['Ciclo',ciclo],
       ['Terapia ormonale',g['terapia-orm']],['Dispareunia',g.dispareunia],['Dismenorrea',g.dismenorrea],
-      ['Cefalea',g.cefalea],['Emicrania',g.emicrania],['Fumo',g.fumo]
-    ]},
-    {icon:'',title:'Screening & Anamnesi',rows:[
+      ['Cefalea',g.cefalea],['Emicrania',g.emicrania],['Fumo',g.fumo],
       ['Screening cervicale',g['screening-cervicale']],['Screening mammo',g['screening-mammo']],
       ['Allergie',g.allergie],['Terapie in atto',g['terapie-atto']],['Interventi',g.chirurgia],
       ['Patologie',g.patologie],['Familiarità',g.familiarita]
     ]},
     {icon:'',title:'Climaterio',rows:[
       ['Sintomi vasomotori',g['meno-vampate']],['Sintomi urogenitali',g['meno-secchezza']],
-      ['Densitometria (MOC) - data',g['meno-moc-data']?new Date(g['meno-moc-data']).toLocaleDateString('it-IT'):''],['Densitometria - T-score',g['meno-moc-tscore']],
+      ['Densitometria (MOC) - data',_refData(g['meno-moc-data'])],['Densitometria - T-score',g['meno-moc-tscore']],
       ['TOS - tipo/dosaggio',g['meno-tos-tipo']],['TOS - in terapia da',g['meno-tos-da']?new Date(g['meno-tos-da']).toLocaleDateString('it-IT'):'']
     ]},
-    {icon:'',title:'Motivo Visita',rows:[['Motivo',g.motivo]]},
+    {icon:'',title:'Motivo della visita',rows:[['',g.motivo]]},
     {icon:'',title:'Sintomi Riferiti',rows:[
       ['Dolore pelvico',g['sint-dolore']],['Sanguinamenti anomali',g['sint-sangu']],
       ['Perdite vaginali',g['sint-perdite']],['Prurito/Bruciore',g['sint-prurito']],['Dispareunia',g['sint-dispareunia']]
@@ -13730,8 +13957,8 @@ function getRefertoSezioni(v){
     {icon:'',title:'Esame Obiettivo',rows:[
       ['Generale',g['esame-generale']],['Speculum',g.speculum],['Prelievi',g.prelievi],['Bimanuale',g.bimanuale]
     ]},
-    {icon:'',title:'Ecografia'+(ecoStrum?' ('+ecoStrum+')':''),rows:[
-      ['Referto',g.ecografia],['Nota',g.informativa?GD.informativa:'']
+    {icon:'',title:_refTitoloEco(g.ecografo,g.sonda,' - '),rows:[
+      ['Referto',g.ecografia],['',g.informativa?GD.informativa:'',{stile:'nota',spazio:true}]
     ]},
     {icon:'',title:'Citologia (Pap-Test)',rows:[
       ['Data',g['pap-data']?new Date(g['pap-data']).toLocaleDateString('it-IT'):''],['Risultato',g['pap-esito']]
@@ -13745,10 +13972,10 @@ function getRefertoSezioni(v){
     ]},
     {icon:'',title:'Biopsia',rows:[['Sede',g['bio-sede']],['Esito istologico',g['bio-esito']]]},
     {icon:'',title:'Follow-up Colposcopia',rows:[['Follow-up',g['colpo-followup']]]},
-    {icon:'',title:'Conclusioni',rows:[
-      ['Conclusioni',g.conclusioni],['Esami richiesti',g['esami-richiesti']],
-      ['Terapia',g.terapia],['Prossimi controlli',g.prossimi]
-    ]}
+    {icon:'',title:'Conclusioni',rows:[['',g.conclusioni]]},
+    {icon:'',title:'Esami richiesti',rows:[['',g['esami-richiesti']]]},
+    {icon:'',title:'Terapia',rows:[['',g.terapia]]},
+    {icon:'',title:'Prossimi controlli',rows:[['',g.prossimi]]}
   ];
 }
 
