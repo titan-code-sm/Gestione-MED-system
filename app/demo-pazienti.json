@@ -2181,5 +2181,92 @@
       "tipo": "appuntamento",
       "pazienteId": 1700000000029
     }
+  ],
+  "dataRiferimento": "2026-09-10",
+  "appuntamenti": [
+    {
+      "id": "app_demo1",
+      "pazienteId": "1700000000009",
+      "pazienteNome": "Rossi Francesca",
+      "data": "2026-09-10",
+      "ora": "09:30",
+      "durata": 30,
+      "tipo": "ostetrica",
+      "stato": "confermato",
+      "note": "Controllo ostetrico",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    },
+    {
+      "id": "app_demo2",
+      "pazienteId": "1700000000003",
+      "pazienteNome": "Bianchi Giulia",
+      "data": "2026-09-10",
+      "ora": "11:00",
+      "durata": 30,
+      "tipo": "ginecologica",
+      "stato": "confermato",
+      "note": "Visita annuale e Pap test",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    },
+    {
+      "id": "app_demo3",
+      "pazienteId": "1700000000022",
+      "pazienteNome": "Romano Chiara",
+      "data": "2026-09-10",
+      "ora": "15:30",
+      "durata": 30,
+      "tipo": "ecografia",
+      "stato": "confermato",
+      "note": "Ecografia di accrescimento",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    },
+    {
+      "id": "app_demo4",
+      "pazienteId": "1700000000013",
+      "pazienteNome": "Ferrari Elena",
+      "data": "2026-09-11",
+      "ora": "10:00",
+      "durata": 30,
+      "tipo": "ginecologica",
+      "stato": "confermato",
+      "note": "Controllo dopo terapia",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    },
+    {
+      "id": "app_demo5",
+      "pazienteId": "1700000000038",
+      "pazienteNome": "Greco Federica",
+      "data": "2026-09-14",
+      "ora": "09:00",
+      "durata": 30,
+      "tipo": "ostetrica",
+      "stato": "confermato",
+      "note": "Controllo ostetrico",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    },
+    {
+      "id": "app_demo6",
+      "pazienteId": "1700000000016",
+      "pazienteNome": "Conti Martina",
+      "data": "2026-09-16",
+      "ora": "12:00",
+      "durata": 30,
+      "tipo": "ginecologica",
+      "stato": "confermato",
+      "note": "Controllo ecografico ovarico",
+      "createdBy": "",
+      "createdByOrg": "",
+      "createdAt": "2026-09-01T09:00:00.000Z"
+    }
   ]
 }
