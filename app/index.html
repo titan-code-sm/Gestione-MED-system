@@ -13395,6 +13395,8 @@ function _gsCssDocumento(l, M){
 .gs-riga.tgr,.gs-riga.tgr b{font-weight:700;}
 .gs-riga.nota{font-size:10pt;font-style:italic;}
 .gs-riga.nota b{font-weight:400;}
+.gs-riga.vgr{font-weight:700;}
+.gs-riga.vgr b{font-weight:400;}
 .gs-firma{display:flex;justify-content:flex-end;padding-top:40px;font-style:italic;}
 .gs-firma>div{text-align:center;min-width:6cm;}
 .gs-firma .fl{margin-top:2px;letter-spacing:0;}
@@ -13451,7 +13453,7 @@ function _gsElementoBlocco(b){
   const t=document.createElement('template');
   if(b.testo!=null){
     const et=b.etichetta?`<b>${_escHtml(b.etichetta)}:</b> `:'';
-    const st=b.stile==='nota'?' nota':b.stile==='grassetto'?' tgr':'';
+    const st=b.stile==='nota'?' nota':b.stile==='grassetto'?' tgr':b.stile==='valoreGrassetto'?' vgr':'';
     t.innerHTML=`<div class="gs-riga${b.cont?' cont':''}${b.gr?' gr':''}${st}${b.sp?' sp':''}">${et}${b.testo.trim()?_escHtml(b.testo):'&nbsp;'}</div>`;
   } else t.innerHTML=b.html.trim();
   const el=t.content.firstElementChild;
@@ -13871,56 +13873,55 @@ function getRefertoSezioni(v){
     const e=v.ecoData||{};
     const TIPO_ESAME_LABEL={i_trimestre:'I Trimestre',morfologica:'Morfologica (II trimestre)',iii_trimestre:'III Trimestre',crescita:'Controllo di crescita'};
     const NUM_FETI_LABEL={singola:'Gravidanza singola',gemellare_bi:'Gemellare bicoriale',gemellare_mono:'Gemellare monocoriale'};
-    const epocaEc=parseSettimaneEsatte(e.settimane);
-    const pEc=(id,ds)=>epocaEc!==null&&e[id]?intergrowthPercentile(ds,epocaEc,parseFloat(e[id])):null;
-    const fmtEc=(val,perc,u)=>val?`${val} ${u}${perc?' ('+perc+' pc)':''}`:'';
-    const strumEc=[e.ecografo,e.sonda].filter(Boolean).join(' · ');
+    const pieno=r=>r[1]&&String(r[1]).trim();
+    // Doppler: titolo a sé solo se compilato, solo i valori e la fonte dei
+    // valori di riferimento (la stessa del link nella compilazione)
+    const dop=[
+      ['Arteria Ombelicale (AO) — PI', e['doppler-ua-pi']],
+      ['Arteria Ombelicale — Flusso diastolico', e['doppler-ua-flusso']],
+      ['Arteria Cerebrale Media (ACM) — PI', e['doppler-mca-pi']],
+      ['MCA — Velocità Massima', e['doppler-mca-vmax']?e['doppler-mca-vmax']+' cm/s':''],
+      ['CPR (ACM-PI / AO-PI)', e['doppler-cpr']],
+      ['Arteria Uterina Sinistra — PI', e['doppler-utsx-pi']],
+      ['Arteria Uterina Destra — PI', e['doppler-utdx-pi']],
+      ['Dotto Venoso — PI', e['doppler-dv-pi']],
+      ['Note Doppler', e['doppler-note']]
+    ];
+    if(dop.some(pieno)) dop.push(['',_REF_FONTE_DOPPLER,{stile:'nota'}]);
     return [
+      // Tipo di esame: solo il testo (es. «Ecografia di datazione»)
       {icon:'',title:'Tipo di Esame',rows:[
-        ['Tipo ecografia',TIPO_ESAME_LABEL[e['tipo-esame']]||e['tipo-esame']],['Indicazione',e.indicazione],['Numero feti',NUM_FETI_LABEL[e['num-feti']]||'']
+        ['',TIPO_ESAME_LABEL[e['tipo-esame']]||e['tipo-esame']],['Indicazione',e.indicazione],['Numero feti',NUM_FETI_LABEL[e['num-feti']]||'']
       ]},
       {icon:'',title:'Datazione',rows:[
-        ['UM',e.um?new Date(e.um).toLocaleDateString('it-IT'):''],['EPP',e.epp],
+        ['UM',_refData(e.um)],['EPP',_refData(e.epp)],
         ['Epoca gestazionale da UM',e['epoca-um']],['Epoca gestazionale ecografica',e['epoca-eco']]
       ]},
-      {icon:'',title:'Screening / Dati Clinici',rows:[
-        ['Test di screening I trimestre',e['test-screening']],['Ecografia morfologica',e['eco-morfologica']],['Dati clinici',e['dati-clinici']]
+      {icon:'',title:'Ecografie - Esami',rows:[
+        ['Test di screening I trimestre',e['test-screening']],['Ecografia morfologica',e['eco-morfologica']]
       ]},
       {icon:'',title:'Età Gestazionale',rows:[['Settimane',e.settimane]]},
-      {icon:'',title:'Referti Ecografici'+(strumEc?' ('+strumEc+')':''),rows:[
+      // Referto: prima i dati clinici («Gravida a … settimane…»), poi i referti
+      {icon:'',title:_refTitoloEco(e.ecografo,e.sonda,', ').replace(/^Ecografia/,'Referto'),rows:[
+        ['',e['dati-clinici']],
         ['Fattori limitanti',e['fattori-limitanti']],['Eco I trimestre',e.eco1],['Eco II-III trimestre',e.eco23],['Eco III trimestre',e.eco3]
       ]},
-      {icon:'',title:'Biometria Fetale',rows:(()=>{
-        const dv=(tab,val,verso)=>{
-          const r=(epocaEc!==null&&val)?dopplerValuta(tab,epocaEc,parseFloat(val),verso):null;
-          return r?` — ${r.perc}, ${r.esito}`:'';
-        };
-        return [
-          ['CRL',e.crl?e.crl+' mm':''],
-          ['BPD',fmtEc(e.bpd,pEc('bpd',INTERGROWTH_BPD),'mm')],['CC (HC)',fmtEc(e.hc,pEc('hc',INTERGROWTH_HC),'mm')],
-          ['FL',fmtEc(e.fl,pEc('fl',INTERGROWTH_FL),'mm')],['AC',fmtEc(e.ac,pEc('ac',INTERGROWTH_AC),'mm')],
-          ['Peso Fetale Stimato (EFW)',(()=>{
-            if(!e.efw)return '';
-            const g=parseFloat(String(e.efw).replace(/[^\d.]/g,''));
-            const pp=(epocaEc!==null&&!isNaN(g)&&typeof efwPercentile==='function')?efwPercentile(epocaEc,g):null;
-            return e.efw+(pp?` — ≈ ${pp} percentile INTERGROWTH-21st (orientativo)`:'');
-          })()],
-          ['Arteria Ombelicale (AO) — PI', e['doppler-ua-pi']?e['doppler-ua-pi']+dv(DOPPLER_UA_PI,e['doppler-ua-pi'],'alto'):''],
-          ['Arteria Ombelicale — Flusso diastolico', e['doppler-ua-flusso']],
-          ['Arteria Cerebrale Media (ACM) — PI', e['doppler-mca-pi']?e['doppler-mca-pi']+dv(DOPPLER_MCA_PI,e['doppler-mca-pi'],'basso'):''],
-          ['MCA — Velocità Massima', e['doppler-mca-vmax']?e['doppler-mca-vmax']+' cm/s':''],
-          ['CPR (ACM-PI / AO-PI)', e['doppler-cpr']?e['doppler-cpr']+dv(DOPPLER_CPR,e['doppler-cpr'],'basso'):''],
-          ['Arteria Uterina Sinistra — PI', e['doppler-utsx-pi']],
-          ['Arteria Uterina Destra — PI', e['doppler-utdx-pi']],
-          ['Dotto Venoso — PI', e['doppler-dv-pi']],
-          ['Note Doppler', e['doppler-note']]
-        ];
-      })()},
-      {icon:'',title:'Note Ecografiche',rows:[['Note',e['note-eco']]]},
-      {icon:'',title:'Conclusioni / Referto',rows:[['Conclusioni',e.diagnosi]]},
-      {icon:'',title:'Terapia',rows:[['Terapia',e.terapia]]},
-      {icon:'',title:'Prossimo Controllo',rows:[['Prossimo controllo',e.prossimo]]},
-      {icon:'',title:'Informativa',rows:[['Nota',e.informativa?GD.informativaEco:'']]}
+      // Biometria e peso fetale: solo i valori, senza percentili
+      {icon:'',title:'Biometria Fetale',rows:[
+        ['CRL',e.crl?e.crl+' mm':''],
+        ['BPD',e.bpd?e.bpd+' mm':''],['CC (HC)',e.hc?e.hc+' mm':''],
+        ['FL',e.fl?e.fl+' mm':''],['AC',e.ac?e.ac+' mm':''],
+        ['Peso Fetale Stimato (EFW)',e.efw]
+      ]},
+      {icon:'',title:'Velocimetria Doppler',rows:dop},
+      // Note ecografiche e informativa: senza titolo, più piccole, in corsivo
+      {icon:'',title:'Note Ecografiche',senzaTitolo:true,rows:[
+        ['',e['note-eco'],{stile:'nota'}],
+        ['',e.informativa?GD.informativaEco:'',{stile:'nota',spazio:!!(e['note-eco']&&String(e['note-eco']).trim())}]
+      ]},
+      {icon:'',title:'Conclusioni',senzaTitolo:true,rows:[['Conclusioni',e.diagnosi,{stile:'valoreGrassetto'}]]},
+      {icon:'',title:'Terapia',rows:[['',e.terapia]]},
+      {icon:'',title:'Prossimo Controllo',rows:[['',e.prossimo]]}
     ];
   }
 
